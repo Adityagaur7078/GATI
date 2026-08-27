@@ -90,3 +90,93 @@ Returned when one or more request fields fail validation.
 **Status:** `500 Internal Server Error`
 
 May occur if user creation or token generation fails. Duplicate email registration is also expected to fail because email addresses must be unique.
+
+## Login User
+
+Authenticates an existing user and returns an authentication token.
+
+### Endpoint
+
+```http
+POST /users/login
+```
+
+### Request Headers
+
+```http
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "email": "aditya@example.com",
+  "password": "password123"
+}
+```
+
+### Required Data
+
+| Field | Required | Requirements |
+| --- | --- | --- |
+| `email` | Yes | Must be a valid email address |
+| `password` | Yes | At least 8 characters |
+
+### Successful Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "token": "<jwt-token>",
+  "user": {
+    "_id": "<user-id>",
+    "fullName": {
+      "firstName": "Aditya",
+      "lastName": "Gaur"
+    },
+    "email": "aditya@example.com",
+    "socketId": null
+  }
+}
+```
+
+### Error Responses
+
+#### Validation error
+
+**Status:** `400 Bad Request`
+
+Returned when the email is invalid or the password is shorter than 8 characters.
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "msg": "Invalid Email",
+      "path": "email",
+      "location": "body"
+    }
+  ]
+}
+```
+
+#### Invalid credentials
+
+**Status:** `401 Unauthorized`
+
+Returned when the email does not exist or the password is incorrect.
+
+```json
+{
+  "message": "Invalid email or password"
+}
+```
+
+#### Unexpected server or database error
+
+**Status:** `500 Internal Server Error`
+
+May occur if the database lookup or token generation fails.
