@@ -180,3 +180,95 @@ Returned when the email does not exist or the password is incorrect.
 **Status:** `500 Internal Server Error`
 
 May occur if the database lookup or token generation fails.
+
+## Get User Profile
+
+Returns the currently authenticated user's profile.
+
+### Endpoint
+
+```http
+GET /users/profile
+```
+
+### Authentication
+
+This route requires a valid JWT token. The server accepts it from either a cookie named `token` or the `Authorization` header:
+
+```http
+Authorization: Bearer <jwt-token>
+```
+
+### Successful Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "_id": "<user-id>",
+  "fullName": {
+    "firstName": "Aditya",
+    "lastName": "Gaur"
+  },
+  "email": "aditya@example.com",
+  "socketId": null
+}
+```
+
+### Error Responses
+
+#### Unauthorized
+
+**Status:** `401 Unauthorized`
+
+Returned when no token is provided, the token is invalid, or the token has been blacklisted.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+## Logout User
+
+Logs the current user out by clearing the cookie and blacklisting the active JWT token.
+
+### Endpoint
+
+```http
+GET /users/logout
+```
+
+### Authentication
+
+This route requires a valid JWT token in the same way as `/users/profile`.
+
+### Successful Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "message": "Logged Out"
+}
+```
+
+### Error Responses
+
+#### Unauthorized
+
+**Status:** `401 Unauthorized`
+
+Returned when the token is missing, invalid, or expired.
+
+```json
+{
+  "message": "Unauthorized"
+}
+```
+
+#### Unexpected server or database error
+
+**Status:** `500 Internal Server Error`
+
+May occur if the token blacklist write fails.
