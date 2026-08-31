@@ -272,3 +272,120 @@ Returned when the token is missing, invalid, or expired.
 **Status:** `500 Internal Server Error`
 
 May occur if the token blacklist write fails.
+
+## Register Captain
+
+Creates a new captain account and returns an authentication token.
+
+### Endpoint
+
+```http
+POST /captains/register
+```
+
+The server must be running on the configured host and port. By default, the backend uses port `3000`.
+
+### Request Headers
+
+```http
+Content-Type: application/json
+```
+
+### Request Body
+
+```json
+{
+  "fullName": {
+    "firstName": "Daniel",
+    "lastName": "Michel"
+  },
+  "email": "daniel@example.com",
+  "password": "password123",
+  "vehicle": {
+    "color": "black",
+    "plate": "UK20GD2435",
+    "capacity": 4,
+    "vehicleType": "car"
+  }
+}
+```
+
+### Required Data
+
+| Field | Required | Requirements |
+| --- | --- | --- |
+| `fullName.firstName` | Yes | At least 3 characters |
+| `fullName.lastName` | No | If provided, at least 3 characters |
+| `email` | Yes | Must be a valid email address |
+| `password` | Yes | At least 8 characters |
+| `vehicle.color` | Yes | At least 3 characters |
+| `vehicle.plate` | Yes | At least 3 characters |
+| `vehicle.capacity` | Yes | Integer greater than or equal to 1 |
+| `vehicle.vehicleType` | Yes | Must be one of: `car`, `motorcycle`, `auto` |
+
+The password is hashed before the captain is stored in the database.
+
+### Successful Response
+
+**Status:** `201 Created`
+
+```json
+{
+  "token": "<jwt-token>",
+  "captain": {
+    "_id": "<captain-id>",
+    "fullName": {
+      "firstName": "Daniel",
+      "lastName": "Michel"
+    },
+    "email": "daniel@example.com",
+    "vehicle": {
+      "color": "black",
+      "plate": "UK20GD2435",
+      "capacity": 4,
+      "vehicleType": "car"
+    }
+  }
+}
+```
+
+A `JWT_SECRET` environment variable must be configured for token generation.
+
+### Error Responses
+
+#### Validation error
+
+**Status:** `400 Bad Request`
+
+Returned when any field fails validation.
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "msg": "Password must be at least 8 characters long",
+      "path": "password",
+      "location": "body"
+    }
+  ]
+}
+```
+
+#### Captain already exists
+
+**Status:** `400 Bad Request`
+
+Returned when an account with the same email already exists.
+
+```json
+{
+  "message": "Captain already exist"
+}
+```
+
+#### Unexpected server or database error
+
+**Status:** `500 Internal Server Error`
+
+May occur if user creation, password hashing, or token generation fails.
