@@ -5,19 +5,26 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import "remixicon/fonts/remixicon.css";
 import LocationSearchPanel from "../components/LocationSearchPanel";
-import gaticarimage from "../assets/gaticarimage.png";
-import gatibike from "../assets/gatibike.png";
-import gatiautoimage from "../assets/gatiautoimage.png";
+import VehiclePanel from "../components/VehiclePanel";
+import ConfirmedRide from "../components/ConfirmedRide";
+import WaitingForDriver from "../components/WaitingForDriver";
+import LookingForDriver from "../components/LookingForDriver";
 
 const Home = () => {
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [panelOpen, setPanelOpen] = useState(false);
   const [vehiclePanelOpen, setVehiclePanelOpen] = useState(false);
+  const [confirmedRidePanel, setConfirmedRidePanel] = useState(false);
+  const [vehicleFoundPanel, setVehicleFoundPanel] = useState(false);
+  const [waitingForDriverPanel, setWaitingForDriverPanel] = useState(false);
 
   const panelRef = useRef(null);
   const panelCloseRef = useRef(null);
   const vehiclePanelRef = useRef(null);
+  const confirmedRidePanelRef = useRef(null);
+  const vehicleFoundRef = useRef(null);
+  const waitingForDriverRef = useRef(null);
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -29,13 +36,13 @@ const Home = () => {
         gsap.to(panelRef.current, {
           height: "70%",
           padding: "0px 24px 24px 24px",
-          duration: 0.3,
+          duration: 0.4,
           ease: "power2.out",
         });
 
         gsap.to(panelCloseRef.current, {
           opacity: 1,
-          duration: 0.2,
+          duration: 0.4,
         });
       } else {
         gsap.to(panelRef.current, {
@@ -65,6 +72,38 @@ const Home = () => {
       })
     }
   }, [vehiclePanelOpen])
+
+  useGSAP(() => {
+    if (confirmedRidePanel){
+      gsap.to(confirmedRidePanelRef.current,{
+      transform:'translateY(0)'
+    })
+    } else{
+      gsap.to(confirmedRidePanelRef.current,{
+        transform:'translateY(100%)'
+      })
+    }
+  }, [confirmedRidePanel])
+
+  useGSAP(() => {
+    if (vehicleFoundPanel){
+      gsap.to(vehicleFoundRef.current,{
+      transform:'translateY(0)'
+    })
+    } else{
+      gsap.to(vehicleFoundRef.current,{
+        transform:'translateY(100%)'
+      })
+    }
+  }, [vehicleFoundPanel])
+
+  useGSAP(() => {
+    gsap.to(waitingForDriverRef.current, {
+      transform: waitingForDriverPanel ? "translateY(0)" : "translateY(100%)",
+      duration: 0.4,
+      ease: "power2.out",
+    });
+  }, [waitingForDriverPanel])
 
   return (
     <div className="h-screen relative overflow-hidden">
@@ -116,6 +155,7 @@ const Home = () => {
 
               <input
                 onClick={() => setPanelOpen(true)}
+                ref={panelRef}
                 value={pickup}
                 onChange={(e) => setPickup(e.target.value)}
                 className="bg-[#eee] px-12 py-2 text-base rounded-lg w-full border border-gray-300"
@@ -125,6 +165,7 @@ const Home = () => {
 
               <input
                 onClick={() => setPanelOpen(true)}
+                ref={panelRef}
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 className="bg-[#eee] px-12 py-2 text-base rounded-lg w-full mt-3 border border-gray-300"
@@ -143,95 +184,40 @@ const Home = () => {
           <LocationSearchPanel setVehiclePanelOpen={setVehiclePanelOpen} setPanelOpen={setPanelOpen} />
         </div>
 
-        <div ref={vehiclePanelRef} className="fixed bottom-0 z-10 w-full bg-white px-3 py-6 translate-y-full">
-          <h3 className="mb-5 text-2xl font-semibold">Choose a Vehicle</h3>
-
-          <div onClick={() => {
-            setVehiclePanelOpen(false)
-          }} className="flex w-full items-center justify-between rounded-xl border-2 mb-2 active:border-black border-gray-300 p-3">
-            <img
-              className="h-12 object-contain"
-              src={gaticarimage}
-              alt="GATI vehicle"
-            />
-
-            <div className="w-1/2 ml-2">
-              <h4 className="flex items-center gap-2 text-base font-medium">
-                GatiGo
-                <span className="flex items-center gap-1">
-                  <i className="ri-user-line"></i>
-                  4
-                </span>
-              </h4>
-
-              <h5 className="text-sm font-medium">2 mins away</h5>
-
-              <p className="text-xs font-normal text-gray-600">
-                Affordable, compact rides
-              </p>
-            </div>
-
-            <h2 className="text-lg font-semibold">₹195.20</h2>
-          </div>
-
-          <div onClick={() => {
-            setVehiclePanelOpen(false)
-          }} className="flex w-full items-center justify-between rounded-xl border-2 mb-2 active:border-black border-gray-300 p-3">
-            <img
-              className="h-12 object-contain"
-              src={gatibike}
-              alt="GATI vehicle"
-            />
-
-            <div className="w-1/2">
-              <h4 className="flex items-center gap-2 text-base font-medium">
-                Moto
-                <span className="flex items-center gap-1">
-                  <i className="ri-user-line"></i>
-                  1
-                </span>
-              </h4>
-
-              <h5 className="text-sm font-medium">3 mins away</h5>
-
-              <p className="text-xs font-normal text-gray-600">
-                Affordable motorcycle rides
-              </p>
-            </div>
-
-            <h2 className="text-lg font-semibold">₹65</h2>
-          </div>
-
-          <div onClick={() => {
-            setVehiclePanelOpen(false)
-          }} className="flex w-full items-center justify-between rounded-xl border-2 mb-2 active:border-black border-gray-300 p-3">
-            <img
-              className="h-12 object-contain"
-              src={gatiautoimage}
-              alt="GATI vehicle"
-            />
-
-            <div className="w-1/2 ml-5">
-              <h4 className="flex items-center gap-2 text-base font-medium">
-                GatiAuto
-                <span className="flex items-center gap-1">
-                  <i className="ri-user-line"></i>
-                  3
-                </span>
-              </h4>
-
-              <h5 className="text-sm font-medium">2 mins away</h5>
-
-              <p className="text-xs font-normal text-gray-600">
-                Affordable auto rides
-              </p>
-            </div>
-
-            <h2 className="text-lg font-semibold">₹118.21</h2>
-          </div>
-
+        <div
+          ref={vehiclePanelRef}
+          className="fixed bottom-0 z-10 w-full translate-y-full bg-transparent"
+        >
+          <VehiclePanel
+            setConfirmedRidePanel={setConfirmedRidePanel}
+            setVehiclePanelOpen={setVehiclePanelOpen}
+          />
         </div>
 
+        <div
+          ref={confirmedRidePanelRef}
+          className="fixed bottom-0 z-10 w-full translate-y-full bg-transparent"
+        >
+          <ConfirmedRide setConfirmedRidePanel={setConfirmedRidePanel} setVehicleFoundPanel={setVehicleFoundPanel} />
+        </div>
+
+        <div
+          ref={waitingForDriverRef}
+          className="fixed bottom-0 z-20 w-full translate-y-full bg-transparent"
+        >
+          <WaitingForDriver
+            setWaitingForDriverPanel={setWaitingForDriverPanel}
+          />
+        </div>
+
+        <div
+          ref={vehicleFoundRef}
+          className="fixed bottom-0 z-10 w-full translate-y-full bg-transparent"
+        >
+          <LookingForDriver
+            setVehicleFoundPanel={setVehicleFoundPanel}
+          />
+        </div>
 
       </div>
     </div >
