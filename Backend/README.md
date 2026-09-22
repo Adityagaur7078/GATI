@@ -1,24 +1,34 @@
 # Backend API
 
-## Register User
+## Base URL
 
-Creates a new user account and returns an authentication token.
+The backend is served from the configured host and port. By default, this app runs on:
 
-### Endpoint
+```http
+http://localhost:3000
+```
+
+Authentication uses a JWT token stored in a cookie named `token` or sent in the `Authorization` header:
+
+```http
+Authorization: Bearer <jwt-token>
+```
+
+---
+
+## User Routes
+
+### Register User
+
+Creates a new user account and returns a JWT token.
+
+#### Endpoint
 
 ```http
 POST /users/register
 ```
 
-The server must be running on the configured host and port. By default, the backend uses port `3000`.
-
-### Request Headers
-
-```http
-Content-Type: application/json
-```
-
-### Request Body
+#### Request Body
 
 ```json
 {
@@ -31,18 +41,14 @@ Content-Type: application/json
 }
 ```
 
-### Required Data
+#### Required Fields
 
-| Field | Required | Requirements |
-| --- | --- | --- |
-| `fullName.firstName` | Yes | At least 3 characters |
-| `fullName.lastName` | No | If provided, at least 3 characters |
-| `email` | Yes | Must be a valid email address |
-| `password` | Yes | At least 8 characters |
+- `fullName.firstName`: required, minimum 3 characters
+- `fullName.lastName`: optional, if provided must be at least 3 characters
+- `email`: required, valid email format
+- `password`: required, minimum 8 characters
 
-The password is hashed before the user is stored in the database.
-
-### Successful Response
+#### Success Response
 
 **Status:** `201 Created`
 
@@ -61,22 +67,15 @@ The password is hashed before the user is stored in the database.
 }
 ```
 
-A `JWT_SECRET` environment variable must be configured for token generation.
-
-### Error Responses
-
-#### Validation error
+#### Error Response
 
 **Status:** `400 Bad Request`
-
-Returned when one or more request fields fail validation.
 
 ```json
 {
   "errors": [
     {
       "type": "field",
-      "value": "bad-email",
       "msg": "Invalid Email",
       "path": "email",
       "location": "body"
@@ -85,29 +84,17 @@ Returned when one or more request fields fail validation.
 }
 ```
 
-#### Unexpected server or database error
+### Login User
 
-**Status:** `500 Internal Server Error`
+Authenticates an existing user and returns a JWT token.
 
-May occur if user creation or token generation fails. Duplicate email registration is also expected to fail because email addresses must be unique.
-
-## Login User
-
-Authenticates an existing user and returns an authentication token.
-
-### Endpoint
+#### Endpoint
 
 ```http
 POST /users/login
 ```
 
-### Request Headers
-
-```http
-Content-Type: application/json
-```
-
-### Request Body
+#### Request Body
 
 ```json
 {
@@ -116,14 +103,12 @@ Content-Type: application/json
 }
 ```
 
-### Required Data
+#### Required Fields
 
-| Field | Required | Requirements |
-| --- | --- | --- |
-| `email` | Yes | Must be a valid email address |
-| `password` | Yes | At least 8 characters |
+- `email`: required, valid email format
+- `password`: required, minimum 8 characters
 
-### Successful Response
+#### Success Response
 
 **Status:** `200 OK`
 
@@ -142,32 +127,9 @@ Content-Type: application/json
 }
 ```
 
-### Error Responses
-
-#### Validation error
-
-**Status:** `400 Bad Request`
-
-Returned when the email is invalid or the password is shorter than 8 characters.
-
-```json
-{
-  "errors": [
-    {
-      "type": "field",
-      "msg": "Invalid Email",
-      "path": "email",
-      "location": "body"
-    }
-  ]
-}
-```
-
-#### Invalid credentials
+#### Error Response
 
 **Status:** `401 Unauthorized`
-
-Returned when the email does not exist or the password is incorrect.
 
 ```json
 {
@@ -175,31 +137,21 @@ Returned when the email does not exist or the password is incorrect.
 }
 ```
 
-#### Unexpected server or database error
+### Get User Profile
 
-**Status:** `500 Internal Server Error`
+Returns the authenticated user's profile.
 
-May occur if the database lookup or token generation fails.
-
-## Get User Profile
-
-Returns the currently authenticated user's profile.
-
-### Endpoint
+#### Endpoint
 
 ```http
 GET /users/profile
 ```
 
-### Authentication
+#### Authentication
 
-This route requires a valid JWT token. The server accepts it from either a cookie named `token` or the `Authorization` header:
+Requires a valid JWT token.
 
-```http
-Authorization: Bearer <jwt-token>
-```
-
-### Successful Response
+#### Success Response
 
 **Status:** `200 OK`
 
@@ -215,13 +167,9 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Error Responses
-
-#### Unauthorized
+#### Error Response
 
 **Status:** `401 Unauthorized`
-
-Returned when no token is provided, the token is invalid, or the token has been blacklisted.
 
 ```json
 {
@@ -229,21 +177,21 @@ Returned when no token is provided, the token is invalid, or the token has been 
 }
 ```
 
-## Logout User
+### Logout User
 
-Logs the current user out by clearing the cookie and blacklisting the active JWT token.
+Logs the current user out and blacklists the active token.
 
-### Endpoint
+#### Endpoint
 
 ```http
-GET /users/logout
+POST /users/logout
 ```
 
-### Authentication
+#### Authentication
 
-This route requires a valid JWT token in the same way as `/users/profile`.
+Requires a valid JWT token.
 
-### Successful Response
+#### Success Response
 
 **Status:** `200 OK`
 
@@ -253,13 +201,9 @@ This route requires a valid JWT token in the same way as `/users/profile`.
 }
 ```
 
-### Error Responses
-
-#### Unauthorized
+#### Error Response
 
 **Status:** `401 Unauthorized`
-
-Returned when the token is missing, invalid, or expired.
 
 ```json
 {
@@ -267,31 +211,21 @@ Returned when the token is missing, invalid, or expired.
 }
 ```
 
-#### Unexpected server or database error
+---
 
-**Status:** `500 Internal Server Error`
+## Captain Routes
 
-May occur if the token blacklist write fails.
+### Register Captain
 
-## Register Captain
+Creates a new captain account and returns a JWT token.
 
-Creates a new captain account and returns an authentication token.
-
-### Endpoint
+#### Endpoint
 
 ```http
 POST /captains/register
 ```
 
-The server must be running on the configured host and port. By default, the backend uses port `3000`.
-
-### Request Headers
-
-```http
-Content-Type: application/json
-```
-
-### Request Body
+#### Request Body
 
 ```json
 {
@@ -310,22 +244,18 @@ Content-Type: application/json
 }
 ```
 
-### Required Data
+#### Required Fields
 
-| Field | Required | Requirements |
-| --- | --- | --- |
-| `fullName.firstName` | Yes | At least 3 characters |
-| `fullName.lastName` | No | If provided, at least 3 characters |
-| `email` | Yes | Must be a valid email address |
-| `password` | Yes | At least 8 characters |
-| `vehicle.color` | Yes | At least 3 characters |
-| `vehicle.plate` | Yes | At least 3 characters |
-| `vehicle.capacity` | Yes | Integer greater than or equal to 1 |
-| `vehicle.vehicleType` | Yes | Must be one of: `car`, `motorcycle`, `auto` |
+- `fullName.firstName`: required, minimum 3 characters
+- `fullName.lastName`: optional, if provided must be at least 3 characters
+- `email`: required, valid email format
+- `password`: required, minimum 8 characters
+- `vehicle.color`: required, minimum 3 characters
+- `vehicle.plate`: required, minimum 3 characters
+- `vehicle.capacity`: required, integer greater than or equal to 1
+- `vehicle.vehicleType`: required, one of `car`, `motorcycle`, `auto`
 
-The password is hashed before the captain is stored in the database.
-
-### Successful Response
+#### Success Response
 
 **Status:** `201 Created`
 
@@ -349,34 +279,9 @@ The password is hashed before the captain is stored in the database.
 }
 ```
 
-A `JWT_SECRET` environment variable must be configured for token generation.
-
-### Error Responses
-
-#### Validation error
+#### Error Response
 
 **Status:** `400 Bad Request`
-
-Returned when any field fails validation.
-
-```json
-{
-  "errors": [
-    {
-      "type": "field",
-      "msg": "Password must be at least 8 characters long",
-      "path": "password",
-      "location": "body"
-    }
-  ]
-}
-```
-
-#### Captain already exists
-
-**Status:** `400 Bad Request`
-
-Returned when an account with the same email already exists.
 
 ```json
 {
@@ -384,29 +289,17 @@ Returned when an account with the same email already exists.
 }
 ```
 
-#### Unexpected server or database error
+### Login Captain
 
-**Status:** `500 Internal Server Error`
+Authenticates an existing captain and returns a JWT token.
 
-May occur if user creation, password hashing, or token generation fails.
-
-## Login Captain
-
-Authenticates an existing captain and returns an authentication token.
-
-### Endpoint
+#### Endpoint
 
 ```http
 POST /captains/login
 ```
 
-### Request Headers
-
-```http
-Content-Type: application/json
-```
-
-### Request Body
+#### Request Body
 
 ```json
 {
@@ -415,14 +308,12 @@ Content-Type: application/json
 }
 ```
 
-### Required Data
+#### Required Fields
 
-| Field | Required | Requirements |
-| --- | --- | --- |
-| `email` | Yes | Must be a valid email address |
-| `password` | Yes | At least 8 characters |
+- `email`: required, valid email format
+- `password`: required, minimum 8 characters
 
-### Successful Response
+#### Success Response
 
 **Status:** `200 OK`
 
@@ -446,32 +337,9 @@ Content-Type: application/json
 }
 ```
 
-### Error Responses
-
-#### Validation error
-
-**Status:** `400 Bad Request`
-
-Returned when the email is invalid or the password is shorter than 8 characters.
-
-```json
-{
-  "errors": [
-    {
-      "type": "field",
-      "msg": "Invalid Email",
-      "path": "email",
-      "location": "body"
-    }
-  ]
-}
-```
-
-#### Invalid credentials
+#### Error Response
 
 **Status:** `401 Unauthorized`
-
-Returned when the email does not exist or the password is incorrect.
 
 ```json
 {
@@ -479,31 +347,21 @@ Returned when the email does not exist or the password is incorrect.
 }
 ```
 
-#### Unexpected server or database error
+### Get Captain Profile
 
-**Status:** `500 Internal Server Error`
+Returns the authenticated captain profile.
 
-May occur if the database lookup or token generation fails.
-
-## Get Captain Profile
-
-Returns the currently authenticated captain profile.
-
-### Endpoint
+#### Endpoint
 
 ```http
 GET /captains/profile
 ```
 
-### Authentication
+#### Authentication
 
-This route requires a valid JWT token. The server accepts it from either a cookie named `token` or the `Authorization` header:
+Requires a valid JWT token.
 
-```http
-Authorization: Bearer <jwt-token>
-```
-
-### Successful Response
+#### Success Response
 
 **Status:** `200 OK`
 
@@ -524,13 +382,9 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Error Responses
-
-#### Unauthorized
+#### Error Response
 
 **Status:** `401 Unauthorized`
-
-Returned when no token is provided, the token is invalid, or the token has been blacklisted.
 
 ```json
 {
@@ -538,21 +392,21 @@ Returned when no token is provided, the token is invalid, or the token has been 
 }
 ```
 
-## Logout Captain
+### Logout Captain
 
-Logs the current captain out by clearing the cookie and blacklisting the active JWT token.
+Logs the current captain out and blacklists the active token.
 
-### Endpoint
+#### Endpoint
 
 ```http
 GET /captains/logout
 ```
 
-### Authentication
+#### Authentication
 
-This route requires a valid JWT token in the same way as `/captains/profile`.
+Requires a valid JWT token.
 
-### Successful Response
+#### Success Response
 
 **Status:** `200 OK`
 
@@ -562,13 +416,9 @@ This route requires a valid JWT token in the same way as `/captains/profile`.
 }
 ```
 
-### Error Responses
-
-#### Unauthorized
+#### Error Response
 
 **Status:** `401 Unauthorized`
-
-Returned when the token is missing, invalid, or expired.
 
 ```json
 {
@@ -576,8 +426,193 @@ Returned when the token is missing, invalid, or expired.
 }
 ```
 
-#### Unexpected server or database error
+---
+
+## Map Routes
+
+All map routes require an authenticated user.
+
+### Get Coordinates
+
+Converts an address into coordinates.
+
+#### Endpoint
+
+```http
+GET /maps/get-coordinates?address=<address>
+```
+
+#### Query Parameters
+
+- `address`: required, minimum 3 characters
+
+#### Success Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "lat": 28.6139,
+  "lng": 77.209
+}
+```
+
+#### Error Response
+
+**Status:** `404 Not Found`
+
+```json
+{
+  "message": "Coordinates not found"
+}
+```
+
+### Get Distance and Time
+
+Gets trip distance and estimated time between two places.
+
+#### Endpoint
+
+```http
+GET /maps/get-distance-time?origin=<origin>&destination=<destination>
+```
+
+#### Query Parameters
+
+- `origin`: required, minimum 3 characters
+- `destination`: required, minimum 3 characters
+
+#### Success Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "distance": "12.5 km",
+  "duration": "25 mins"
+}
+```
+
+#### Error Response
+
+**Status:** `404 Not Found`
+
+```json
+{
+  "message": "Unable to calculate distance and time"
+}
+```
+
+### Get Suggestions
+
+Returns location suggestions for typed input.
+
+#### Endpoint
+
+```http
+GET /maps/get-suggestions?input=<text>
+```
+
+#### Query Parameters
+
+- `input`: required, minimum 3 characters
+
+#### Success Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "suggestions": [
+    "New Delhi",
+    "Noida",
+    "NCR"
+  ]
+}
+```
+
+#### Error Response
 
 **Status:** `500 Internal Server Error`
 
-May occur if the token blacklist write fails.
+```json
+{
+  "message": "Unable to fetch location suggestions"
+}
+```
+
+---
+
+## Ride Routes
+
+### Create Ride
+
+Creates a new ride request for an authenticated user.
+
+#### Endpoint
+
+```http
+POST /rides/create
+```
+
+#### Authentication
+
+Requires a valid authenticated user token.
+
+#### Request Body
+
+```json
+{
+  "pickup": "Connaught Place",
+  "destination": "India Gate",
+  "vehicleType": "car"
+}
+```
+
+#### Required Fields
+
+- `pickup`: required, minimum 3 characters
+- `destination`: required, minimum 3 characters
+- `vehicleType`: required, one of `auto`, `car`, `moto`
+
+#### Success Response
+
+**Status:** `201 Created`
+
+```json
+{
+  "_id": "<ride-id>",
+  "user": "<user-id>",
+  "pickup": "Connaught Place",
+  "destination": "India Gate",
+  "vehicleType": "car"
+}
+```
+
+#### Error Response
+
+**Status:** `400 Bad Request`
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "msg": "Invalid vehicle type",
+      "path": "vehicleType",
+      "location": "body"
+    }
+  ]
+}
+```
+
+---
+
+## Common Status Codes
+
+- `200 OK`: successful request
+- `201 Created`: resource created successfully
+- `400 Bad Request`: validation failed or invalid payload
+- `401 Unauthorized`: missing or invalid token
+- `404 Not Found`: resource or map lookup not found
+- `500 Internal Server Error`: server-side failure
