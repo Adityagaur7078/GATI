@@ -1,0 +1,122 @@
+const crypto = require('crypto');
+const rideModel = require('../models/ride.model');
+const mapService = require('./map.service');
+
+
+const FARE_CONFIG = {
+    moto: {
+        baseFare: 20,
+        perKm: 8,
+        perMinute: 1,
+    },
+
+    auto: {
+        baseFare: 30,
+        perKm: 10,
+        perMinute: 1.5,
+    },
+
+    car: {
+        baseFare: 50,
+        perKm: 14,
+        perMinute: 2,
+    },
+};
+
+
+module.exports.createRide = async ({
+    user,
+    pickup,
+    destination,
+    vehicleType,
+}) => {
+
+    // 1. Validate input
+    if (!pickup || !destination) {
+        throw new Error('Pickup and destination are required');
+    }
+
+    if (!vehicleType) {
+        throw new Error('Vehicle type is required');
+    }
+
+    // 2. Calculate fare
+    const fare = await getFare(
+        pickup,
+        destination,
+        vehicleType
+    );
+
+    // 3. Create ride
+    const ride = await rideModel.create({
+        user,
+        pickup,
+        destination,
+        vehicleType,
+        otp: getOtp(4),
+        fare: fare.totalFare,
+    });
+
+    return ride;
+};
+
+async function getFare(pickup, destination, vehicleType) {
+
+    // Validate locations
+    if (!pickup || !destination) {
+        throw new Error('Pickup and destination are required');
+    }
+
+    // Validate vehicle
+    if (!FARE_CONFIG[vehicleType]) {
+        throw new Error('Invalid vehicle type');
+    }
+
+    // Get distance + duration from OSRM
+    const distanceTime = await mapService.getDistanceTime(
+        pickup,
+        destination
+    );
+
+    const distanceInKm = distanceTime.distance.kilometers;
+    const durationInMinutes = distanceTime.duration.minutes;
+
+    const config = FARE_CONFIG[vehicleType];
+
+    // Calculate fare
+    const distanceFare =
+        distanceInKm * config.perKm;
+
+    const timeFare =
+        durationInMinutes * config.perMinute;
+
+    const totalFare =
+        config.baseFare +
+        distanceFare +
+        timeFare;
+
+    return {
+        vehicleType,
+
+        baseFare: config.baseFare,
+
+        distance: distanceInKm,
+
+        duration: durationInMinutes,
+
+        distanceFare: Number(distanceFare.toFixed(2)),
+
+        timeFare: Number(timeFare.toFixed(2)),
+
+        totalFare: Number(totalFare.toFixed(2)),
+    };
+}
+
+function getOtp(num) {
+    function generateOtp(num) {
+        const otp = crypto.randomInt(Math.pow(10, num - 1), Math.pow(10, num)).toString();
+        return otp;
+    }
+
+    return generateOtp(num);
+}
