@@ -606,6 +606,58 @@ Requires a valid authenticated user token.
 }
 ```
 
+### Get Fare
+
+Calculates an estimated fare for a trip between two locations.
+
+#### Endpoint
+
+```http
+GET /rides/get-fare?pickup=<pickup>&destination=<destination>
+```
+
+#### Authentication
+
+Requires a valid authenticated user token.
+
+#### Query Parameters
+
+- `pickup`: required, minimum 3 characters
+- `destination`: required, minimum 3 characters
+
+#### Success Response
+
+**Status:** `200 OK`
+
+```json
+{
+  "vehicleType": "car",
+  "baseFare": 50,
+  "distance": 12.5,
+  "duration": 25,
+  "distanceFare": 175,
+  "timeFare": 50,
+  "totalFare": 275
+}
+```
+
+#### Error Response
+
+**Status:** `400 Bad Request`
+
+```json
+{
+  "errors": [
+    {
+      "type": "field",
+      "msg": "Invalid pickup address",
+      "path": "pickup",
+      "location": "query"
+    }
+  ]
+}
+```
+
 ---
 
 ## Common Status Codes

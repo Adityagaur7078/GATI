@@ -102,7 +102,7 @@ async function getFare(pickup, destination, vehicleType) {
 
         distance: distanceInKm,
 
-        duration: durationInMinutes,
+        duration: formatDuration(durationInMinutes),
 
         distanceFare: Number(distanceFare.toFixed(2)),
 
@@ -110,6 +110,21 @@ async function getFare(pickup, destination, vehicleType) {
 
         totalFare: Number(totalFare.toFixed(2)),
     };
+}
+
+module.exports.getFare = getFare;
+
+function formatDuration(minutes) {
+    if (minutes < 60) {
+        return `${minutes} mins`;
+    }
+
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    return remainingMinutes === 0
+        ? `${hours} hr`
+        : `${hours} hr ${remainingMinutes} mins`;
 }
 
 function getOtp(num) {

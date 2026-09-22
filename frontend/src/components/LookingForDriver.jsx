@@ -1,7 +1,11 @@
 import React from "react"
-import gaticarimage from "../assets/gaticarimage.png"
-
-const LookingForDriver = ({ setVehicleFoundPanel }) => {
+const LookingForDriver = ({
+  setVehicleFoundPanel,
+  selectedVehicle,
+  pickup,
+  destination,
+  fare,
+}) => {
   return (
     <div className="mx-auto w-full max-w-md rounded-t-4xl bg-white px-5 pb-6 pt-3 shadow-[0_-12px_40px_rgba(15,23,42,0.18)]">
       <button
@@ -29,7 +33,7 @@ const LookingForDriver = ({ setVehicleFoundPanel }) => {
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-600">
               Selected ride
             </p>
-            <h3 className="mt-1 text-lg font-bold text-slate-900">GatiGo</h3>
+            <h3 className="mt-1 text-lg font-bold text-slate-900">{selectedVehicle?.name}</h3>
           </div>
 
           <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
@@ -46,8 +50,8 @@ const LookingForDriver = ({ setVehicleFoundPanel }) => {
           <span className="absolute bottom-6 right-[30%] h-2 w-2 animate-pulse rounded-full bg-emerald-400 [animation-delay:1200ms]" />
 
           <img
-            src={gaticarimage}
-            alt="GatiGo vehicle"
+            src={selectedVehicle?.image}
+            alt={`${selectedVehicle?.name} vehicle`}
             className="relative z-10 h-20 w-32 object-contain drop-shadow-[0_8px_8px_rgba(15,23,42,0.2)]"
           />
         </div>
@@ -77,7 +81,7 @@ const LookingForDriver = ({ setVehicleFoundPanel }) => {
           <div className="min-w-0">
             <p className="text-xs font-medium text-slate-500">Pickup</p>
             <p className="truncate text-sm font-semibold text-slate-900">
-              562/11-A, Kankariya Talab
+              {pickup}
             </p>
           </div>
         </div>
@@ -90,7 +94,7 @@ const LookingForDriver = ({ setVehicleFoundPanel }) => {
           <div className="min-w-0">
             <p className="text-xs font-medium text-slate-500">Destination</p>
             <p className="truncate text-sm font-semibold text-slate-900">
-              Kankariya Talab, Bhopal
+              {destination}
             </p>
           </div>
         </div>
@@ -102,7 +106,9 @@ const LookingForDriver = ({ setVehicleFoundPanel }) => {
           <span className="text-sm font-medium">Pay with cash</span>
         </div>
 
-        <span className="text-xl font-bold text-slate-950">₹195.20</span>
+        <span className="text-xl font-bold text-slate-950">
+          {fare ? `₹${fare.totalFare.toFixed(2)}` : "-"}
+        </span>
       </div>
     </div>
   )

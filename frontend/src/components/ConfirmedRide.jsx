@@ -1,12 +1,18 @@
 import React from "react";
-import gaticarimage from "../assets/gaticarimage.png";
-
-const ConfirmedRide = (props) => {
+const ConfirmedRide = ({
+  setConfirmedRidePanel,
+  confirmRide,
+  selectedVehicle,
+  pickup,
+  destination,
+  rideError,
+  rideLoading,
+}) => {
   return (
     <div className="relative rounded-t-3xl bg-white px-4 pb-4 pt-8 shadow-[0_-6px_24px_rgba(0,0,0,0.12)]">
       <button
         type="button"
-        onClick={() => props.setConfirmedRidePanel(false)}
+        onClick={() => setConfirmedRidePanel(false)}
         className="absolute left-1/2 top-2 h-1.5 w-14 -translate-x-1/2 rounded-full bg-gray-300 transition hover:bg-gray-500"
         aria-label="Close confirmation panel"
       />
@@ -26,14 +32,14 @@ const ConfirmedRide = (props) => {
       <div className="mb-4 flex items-center justify-between rounded-2xl bg-gray-50 px-4 py-3">
         <div>
           <p className="text-xs text-gray-500">Selected vehicle</p>
-          <p className="mt-1 text-lg font-bold text-gray-900">GatiGo</p>
-          <p className="text-xs text-gray-500">Affordable, compact ride</p>
+          <p className="mt-1 text-lg font-bold text-gray-900">{selectedVehicle?.name}</p>
+          <p className="text-xs text-gray-500">{selectedVehicle?.description}</p>
         </div>
 
         <img
           className="h-20 w-32 object-contain"
-          src={gaticarimage}
-          alt="GatiGo vehicle"
+          src={selectedVehicle?.image}
+          alt={`${selectedVehicle?.name} vehicle`}
         />
       </div>
 
@@ -44,7 +50,7 @@ const ConfirmedRide = (props) => {
           </span>
           <div>
             <p className="text-sm font-semibold">Pickup location</p>
-            <p className="text-xs text-gray-500">562/11-A, Kankariya Talab</p>
+            <p className="max-w-[220px] truncate text-xs text-gray-500">{pickup}</p>
           </div>
         </div>
 
@@ -54,7 +60,7 @@ const ConfirmedRide = (props) => {
           </span>
           <div>
             <p className="text-sm font-semibold">Destination</p>
-            <p className="text-xs text-gray-500">Kankariya Talab, Bhopal</p>
+            <p className="max-w-[220px] truncate text-xs text-gray-500">{destination}</p>
           </div>
         </div>
 
@@ -69,19 +75,21 @@ const ConfirmedRide = (props) => {
             </div>
           </div>
 
-          <p className="text-lg font-bold text-gray-900">₹195.20</p>
+          <p className="text-lg font-bold text-gray-900">
+            {selectedVehicle?.fare ? `₹${selectedVehicle.fare.totalFare.toFixed(2)}` : "-"}
+          </p>
         </div>
       </div>
 
+      {rideError && <p className="mt-3 text-sm text-red-600">{rideError}</p>}
+
       <button
-        onClick={() => {
-          props.setConfirmedRidePanel(false)
-          props.setVehicleFoundPanel(true)
-        }}
+        onClick={confirmRide}
+        disabled={rideLoading}
         type="button"
         className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white shadow-md transition hover:bg-green-700 active:scale-[0.98]"
       >
-        Confirm ride
+        {rideLoading ? "Confirming ride..." : "Confirm ride"}
       </button>
     </div>
   );

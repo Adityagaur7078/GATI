@@ -3,35 +3,38 @@ import gaticarimage from "../assets/gaticarimage.png";
 import gatibike from "../assets/gatibike.png";
 import gatiautoimage from "../assets/gatiautoimage.png";
 
-const VehiclePanel = ({ setVehiclePanelOpen, setConfirmedRidePanel }) => {
+const VehiclePanel = ({
+  setVehiclePanelOpen,
+  setConfirmedRidePanel,
+  setSelectedVehicle,
+  fares,
+}) => {
   const vehicles = [
     {
       name: "GatiGo",
+      type: "car",
       image: gaticarimage,
       seats: 4,
-      time: "2 mins away",
       description: "Affordable, compact rides",
-      price: "₹195.20",
     },
     {
       name: "Moto",
+      type: "moto",
       image: gatibike,
       seats: 1,
-      time: "3 mins away",
       description: "Affordable motorcycle rides",
-      price: "₹65",
     },
     {
       name: "GatiAuto",
+      type: "auto",
       image: gatiautoimage,
       seats: 3,
-      time: "2 mins away",
       description: "Affordable auto rides",
-      price: "₹118.21",
     },
   ];
 
-  const selectVehicle = () => {
+  const selectVehicle = (vehicle) => {
+    setSelectedVehicle(vehicle);
     setVehiclePanelOpen(false);
     setConfirmedRidePanel(true);
   };
@@ -59,10 +62,14 @@ const VehiclePanel = ({ setVehiclePanelOpen, setConfirmedRidePanel }) => {
 
       <div className="space-y-3">
         {vehicles.map((vehicle) => (
+          (() => {
+            const fare = fares[vehicle.type];
+
+            return (
           <button
             type="button"
             key={vehicle.name}
-            onClick={selectVehicle}
+            onClick={() => selectVehicle({ ...vehicle, fare })}
             className="flex w-full items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3 text-left shadow-sm transition hover:border-green-500 active:scale-[0.98]"
           >
             <div className="flex h-16 w-20 items-center justify-center rounded-xl bg-gray-50">
@@ -80,17 +87,23 @@ const VehiclePanel = ({ setVehiclePanelOpen, setConfirmedRidePanel }) => {
                   <i className="ri-user-line" /> {vehicle.seats}
                 </span>
               </h4>
-              <p className="text-sm text-gray-500">{vehicle.time}</p>
+              <p className="text-sm text-gray-500">
+                {fare ? fare.duration : "Fare unavailable"}
+              </p>
               <p className="truncate text-xs text-gray-400">
                 {vehicle.description}
               </p>
             </div>
 
             <div className="text-right">
-              <p className="font-bold text-gray-900">{vehicle.price}</p>
+              <p className="font-bold text-gray-900">
+                {fare ? `₹${fare.totalFare.toFixed(2)}` : "-"}
+              </p>
               <i className="ri-arrow-right-s-line text-xl text-gray-400" />
             </div>
           </button>
+            );
+          })()
         ))}
       </div>
     </div>
