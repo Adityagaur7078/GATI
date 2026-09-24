@@ -1,17 +1,50 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "remixicon/fonts/remixicon.css";
-import gatimap from "../assets/gatimap.gif";
 import gaticarimage from "../assets/gaticarimage.png";
+import RideMap from "../components/RideMap";
+import { SocketDataContext } from "../context/SocketContext";
 
 const Riding = () => {
+  const { state } = useLocation();
+  const navigate = useNavigate();
+  const { socketId, sendMessage, receiveMessage } = useContext(SocketDataContext);
+  const ride = state?.ride;
+  const [captainLocation, setCaptainLocation] = useState(ride?.captain?.location || null);
+  const [userLocation, setUserLocation] = useState(null);
+  useEffect(() => {
+    if (!socketId) return undefined;
+    return receiveMessage("captain-location", setCaptainLocation);
+  }, [receiveMessage, socketId]);
+
+  useEffect(() => {
+    if (!socketId) return undefined;
+    return receiveMessage("ride-completed", () => navigate("/home"));
+  }, [receiveMessage, socketId]);
+
+  useEffect(() => {
+    if (!ride?.user?._id || !socketId || !navigator.geolocation) return undefined;
+
+    const sendLocation = () => navigator.geolocation.getCurrentPosition(({ coords }) => {
+      const location = { lat: coords.latitude, lng: coords.longitude };
+      setUserLocation(location);
+      sendMessage("update-location-user", { userId: ride.user._id, location });
+    });
+
+    sendLocation();
+    const intervalId = setInterval(sendLocation, 5000);
+    return () => clearInterval(intervalId);
+  }, [ride?.user?._id, sendMessage, socketId]);
+
   return (
     <div className="relative flex h-screen flex-col overflow-hidden bg-slate-100">
       <div className="relative h-1/2 w-full shrink-0">
-        <img
-          src={gatimap}
-          alt="Ride route map"
-          className="h-full w-full object-cover"
+        <RideMap
+          pickupLocation={ride?.pickupLocation}
+          destinationLocation={ride?.destinationLocation}
+          captainLocation={captainLocation}
+          userLocation={userLocation}
         />
 
         <Link
@@ -69,7 +102,7 @@ const Riding = () => {
                   Pickup
                 </p>
                 <p className="text-xs font-bold text-slate-900">
-                  562/11-A, Kankariya Talab
+                  {ride?.pickup}
                 </p>
               </div>
             </div>
@@ -81,7 +114,7 @@ const Riding = () => {
                   Destination
                 </p>
                 <p className="text-xs font-bold text-slate-900">
-                  Kankariya Talab, Bhopal
+                  {ride?.destination}
                 </p>
               </div>
             </div>
@@ -97,7 +130,10 @@ const Riding = () => {
             </div>
           </div>
 
-          <p className="text-lg font-bold text-slate-950">₹193.20</p>
+          <div className="text-right">
+            <p className="text-xs font-semibold text-emerald-700">Your OTP</p>
+            <p className="text-lg font-bold tracking-[0.3em] text-slate-950">{ride?.otp || "----"}</p>
+          </div>
         </div>
 
         <button

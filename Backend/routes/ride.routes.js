@@ -20,4 +20,19 @@ router.get('/get-fare',
     rideController.getFare
 )
 
+router.post('/accept',
+    authMiddleware.authCaptain,
+    rideController.acceptRide
+)
+
+router.post('/confirm',
+    authMiddleware.authCaptain,
+    rideController.confirmRide
+)
+
+router.post('/complete',
+    authMiddleware.authCaptain,
+    rideController.completeRide
+)
+
 module.exports = router;

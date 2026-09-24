@@ -8,7 +8,7 @@ const CaptainLogout = () => {
     useEffect(() => {
         const logout = async () => {
             try {
-                const token = localStorage.getItem('token')
+                const token = localStorage.getItem('captainToken')
 
                 if (!token) {
                     navigate('/captain/login')
@@ -26,13 +26,13 @@ const CaptainLogout = () => {
                 )
 
                 if (response.status === 200) {
-                    localStorage.removeItem('token')
+                    localStorage.removeItem('captainToken')
                     navigate('/captain-login')
                 }
             } catch (error) {
                 console.error('Logout error:', error)
 
-                localStorage.removeItem('token')
+                localStorage.removeItem('captainToken')
                 navigate('/captain-login')
             }
         }

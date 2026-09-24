@@ -29,6 +29,8 @@ module.exports.createRide = async ({
     pickup,
     destination,
     vehicleType,
+    pickupLocation,
+    destinationLocation,
 }) => {
 
     // 1. Validate input
@@ -53,6 +55,8 @@ module.exports.createRide = async ({
         pickup,
         destination,
         vehicleType,
+        pickupLocation,
+        destinationLocation,
         otp: getOtp(4),
         fare: fare.totalFare,
     });
@@ -113,6 +117,54 @@ async function getFare(pickup, destination, vehicleType) {
 }
 
 module.exports.getFare = getFare;
+
+module.exports.acceptRide = async ({ rideId, captainId }) => {
+    const ride = await rideModel.findOneAndUpdate(
+        { _id: rideId, status: 'pending' },
+        { status: 'accepted', captain: captainId },
+        { new: true }
+    );
+
+    if (!ride) {
+        throw new Error('Ride is no longer available');
+    }
+
+    return ride.populate('user captain');
+};
+
+module.exports.confirmRide = async ({ rideId, captainId, otp }) => {
+    const ride = await rideModel.findOne({ _id: rideId, captain: captainId, status: 'accepted' }).select('+otp');
+
+    if (!ride) {
+        throw new Error('Ride is no longer available');
+    }
+
+    if (ride.otp !== otp) {
+        throw new Error('Invalid ride OTP');
+    }
+
+    ride.status = 'ongoing';
+    await ride.save();
+
+    return rideModel.findById(ride._id)
+        .select('+otp')
+        .populate('user')
+        .populate('captain');
+};
+
+module.exports.completeRide = async ({ rideId, captainId }) => {
+    const ride = await rideModel.findOneAndUpdate(
+        { _id: rideId, captain: captainId, status: 'ongoing' },
+        { status: 'completed' },
+        { new: true }
+    ).populate('user captain');
+
+    if (!ride) {
+        throw new Error('Ride is not active or was already completed');
+    }
+
+    return ride;
+};
 
 function formatDuration(minutes) {
     if (minutes < 60) {

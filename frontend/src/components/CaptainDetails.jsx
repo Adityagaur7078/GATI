@@ -1,6 +1,14 @@
-import React from 'react'
+import React, { useContext } from 'react'
+import { CaptainDataContext } from "../context/CaptainContext";
 
 const CaptainDetails = () => {
+
+    const { captain } = useContext(CaptainDataContext);
+
+    const captainName = captain?.fullName
+        ? `${captain.fullName.firstName} ${captain.fullName.lastName}`.trim()
+        : 'Captain';
+
     return (
         <div className="p-4">
             <div className="mb-6 flex items-center justify-between">
@@ -23,7 +31,7 @@ const CaptainDetails = () => {
 
                     <div>
                         <p className="text-base font-semibold text-gray-900">
-                            Harsh Patel
+                            {captainName}
                         </p>
                         <p className="text-xs text-gray-500">Captain</p>
                     </div>

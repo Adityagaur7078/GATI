@@ -61,7 +61,7 @@ const captainSchema = new mongoose.Schema({
         lat: {
             type: Number
         },
-        log: {
+        lng: {
             type: Number
         }
     }

@@ -1,19 +1,42 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const FinishRidingPopUp = ({ setFinishRidingPopUpPanel }) => {
+const FinishRidingPopUp = ({ finishRide: finishRideRequest, setFinishRidingPopUpPanel, expanded: expandedProp, setExpanded }) => {
   const navigate = useNavigate();
+  const [localExpanded, setLocalExpanded] = useState(true);
+  const expanded = expandedProp ?? localExpanded;
 
-  const finishRide = () => {
-    setFinishRidingPopUpPanel(false);
-    navigate("/captain-home");
+  const toggleExpanded = () => {
+    const nextExpanded = !expanded;
+    setLocalExpanded(nextExpanded);
+    setExpanded?.(nextExpanded);
+  };
+
+  const finishRide = async () => {
+    try {
+      await finishRideRequest();
+      setFinishRidingPopUpPanel(false);
+      navigate("/captain-home");
+    } catch (error) {
+      window.alert(error.message);
+    }
   };
 
   return (
-    <section className="max-h-[78vh] overflow-y-auto rounded-t-2xl bg-white px-4 py-5 shadow-2xl">
-      <h1 className="mb-5 text-xl font-bold text-gray-900">
-        Finish this Ride
-      </h1>
+    <section className="max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-slate-200 bg-white px-4 pb-5 pt-2 shadow-2xl">
+      <button
+        type="button"
+        onClick={toggleExpanded}
+        className="mb-3 flex h-7 w-full items-center justify-center"
+        aria-label={expanded ? "Collapse finish ride panel" : "Expand finish ride panel"}
+      >
+        <span className="h-1.5 w-14 rounded-full bg-gray-300" />
+      </button>
+
+      {expanded && <>
+        <h1 className="mb-5 text-xl font-bold text-gray-900">
+          Finish this Ride
+        </h1>
 
       <div className="mb-6 flex items-center justify-between rounded-lg bg-yellow-300 px-3 py-3">
         <div className="flex items-center gap-3">
@@ -53,13 +76,14 @@ const FinishRidingPopUp = ({ setFinishRidingPopUpPanel }) => {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={finishRide}
-        className="mt-8 w-full rounded-lg bg-green-500 py-3 text-sm font-bold text-white hover:bg-green-600"
-      >
-        Finish Ride
-      </button>
+        <button
+          type="button"
+          onClick={finishRide}
+          className="mt-8 w-full rounded-lg bg-green-500 py-3 text-sm font-bold text-white hover:bg-green-600"
+        >
+          Finish Ride
+        </button>
+      </>}
     </section>
   );
 };

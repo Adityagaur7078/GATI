@@ -1,12 +1,24 @@
 import axios from 'axios'
-import React, { useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { SocketDataContext } from '../context/SocketContext'
+import { UserDataContext } from '../context/UserContext'
 
 const UserProtectWrapper = ({ children }) => {
 
     const [isLoading, setIsLoading] = useState(true)
 
     const navigate = useNavigate()
+    const { user, setUser } = useContext(UserDataContext)
+    const { socketId, sendMessage } = useContext(SocketDataContext)
+
+    useEffect(() => {
+        if (!user?._id || !socketId) {
+            return
+        }
+
+        sendMessage('join', { userType: 'user', userId: user._id })
+    }, [user?._id, socketId, sendMessage])
 
     useEffect(() => {
 
@@ -28,6 +40,7 @@ const UserProtectWrapper = ({ children }) => {
         .then(response => {
 
             if (response.status === 200) {
+                setUser(response.data)
                 setIsLoading(false)
             }
 

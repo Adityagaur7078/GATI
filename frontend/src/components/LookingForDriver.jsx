@@ -5,6 +5,7 @@ const LookingForDriver = ({
   pickup,
   destination,
   fare,
+  ride,
 }) => {
   return (
     <div className="mx-auto w-full max-w-md rounded-t-4xl bg-white px-5 pb-6 pt-3 shadow-[0_-12px_40px_rgba(15,23,42,0.18)]">
@@ -67,6 +68,9 @@ const LookingForDriver = ({
             </p>
             <p className="text-xs text-slate-500">
               This usually takes a few seconds
+            </p>
+            <p className="mt-2 text-sm font-bold text-slate-900">
+              Share OTP: <span className="tracking-[0.3em] text-emerald-700">{ride?.otp || "----"}</span>
             </p>
           </div>
         </div>

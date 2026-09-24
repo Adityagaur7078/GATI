@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import gatilogoblack from "../assets/gatilogoblack.png";
 
 const ConfirmRidePopUp = ({
+  ride,
+  confirmRide: confirmRideRequest,
   setConfirmRidePopUpPanel,
   setRidePopUpPanel,
 }) => {
@@ -14,14 +16,18 @@ const ConfirmRidePopUp = ({
     setRidePopUpPanel(false);
   };
 
-  const confirmRide = () => {
+  const confirmRide = async () => {
     if (otp.length !== 4) return;
 
-    closePanels();
-
-    navigate("/captain/riding", {
-      state: { openFinishRide: true },
-    });
+    try {
+      const confirmedRide = await confirmRideRequest(otp);
+      navigate("/captain/riding", {
+        state: { openFinishRide: true, ride: confirmedRide },
+      });
+    } catch (error) {
+      setOtp("");
+      window.alert(error.message);
+    }
   };
 
   return (
@@ -55,12 +61,12 @@ const ConfirmRidePopUp = ({
             </div>
 
             <div>
-              <p className="font-bold text-gray-900">Harshi Pateliya</p>
+              <p className="font-bold text-gray-900">{ride?.user?.fullName?.firstName} {ride?.user?.fullName?.lastName}</p>
               <p className="text-xs text-gray-700">Passenger</p>
             </div>
           </div>
 
-          <p className="font-bold text-gray-900">2.2 KM</p>
+          <p className="font-bold text-gray-900">{ride?.distance ? `${ride.distance} KM` : "Ride"}</p>
         </div>
 
         <div className="space-y-6 p-5">
@@ -68,10 +74,7 @@ const ConfirmRidePopUp = ({
             <i className="ri-map-pin-2-fill text-xl text-gray-800" />
             <div>
               <p className="text-xs text-gray-500">Pickup location</p>
-              <p className="font-semibold text-gray-900">562/11-A</p>
-              <p className="text-sm text-gray-500">
-                Kankariya Talab, Bhopal
-              </p>
+              <p className="font-semibold text-gray-900">{ride?.pickup}</p>
             </div>
           </div>
 
@@ -79,10 +82,7 @@ const ConfirmRidePopUp = ({
             <i className="ri-map-pin-fill text-xl text-gray-800" />
             <div>
               <p className="text-xs text-gray-500">Drop location</p>
-              <p className="font-semibold text-gray-900">562/11-A</p>
-              <p className="text-sm text-gray-500">
-                Kankariya Talab, Bhopal
-              </p>
+              <p className="font-semibold text-gray-900">{ride?.destination}</p>
             </div>
           </div>
 
@@ -90,7 +90,7 @@ const ConfirmRidePopUp = ({
             <i className="ri-wallet-3-fill text-xl text-gray-800" />
             <div>
               <p className="text-xs text-gray-500">Payment method</p>
-              <p className="font-semibold text-gray-900">₹193.20</p>
+              <p className="font-semibold text-gray-900">₹{ride?.fare?.toFixed(2)}</p>
               <p className="text-sm text-gray-500">Cash payment</p>
             </div>
           </div>

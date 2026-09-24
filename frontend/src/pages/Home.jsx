@@ -1,17 +1,21 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import gatilogoblack from "../assets/gatilogoblack.png";
 import gatimap from "../assets/gatimap.gif";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import "remixicon/fonts/remixicon.css";
+import { useNavigate } from "react-router-dom";
 import LocationSearchPanel from "../components/LocationSearchPanel";
 import VehiclePanel from "../components/VehiclePanel";
 import ConfirmedRide from "../components/ConfirmedRide";
 import WaitingForDriver from "../components/WaitingForDriver";
 import LookingForDriver from "../components/LookingForDriver";
 import axios from "axios";
+import { SocketDataContext } from "../context/SocketContext";
+import { UserDataContext } from "../context/UserContext";
 
 const Home = () => {
+  const navigate = useNavigate();
   const [pickup, setPickup] = useState("");
   const [destination, setDestination] = useState("");
   const [panelOpen, setPanelOpen] = useState(false);
@@ -26,6 +30,9 @@ const Home = () => {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [rideLoading, setRideLoading] = useState(false);
   const [rideError, setRideError] = useState("");
+  const [ride, setRide] = useState(null);
+  const { socketId, sendMessage, receiveMessage } = useContext(SocketDataContext);
+  const { user } = useContext(UserDataContext);
 
   const panelRef = useRef(null);
   const panelCloseRef = useRef(null);
@@ -33,6 +40,31 @@ const Home = () => {
   const confirmedRidePanelRef = useRef(null);
   const vehicleFoundRef = useRef(null);
   const waitingForDriverRef = useRef(null);
+
+  useEffect(() => {
+    if (!socketId) return undefined;
+
+    return receiveMessage("ride-confirmed", (ride) => {
+      setVehicleFoundPanel(false);
+      setWaitingForDriverPanel(true);
+      navigate("/riding", { state: { ride } });
+    });
+  }, [navigate, receiveMessage, socketId]);
+
+  useEffect(() => {
+    if (!ride?._id || !user?._id || !socketId || !navigator.geolocation) return undefined;
+
+    const sendLocation = () => navigator.geolocation.getCurrentPosition(({ coords }) => {
+      sendMessage("update-location-user", {
+        userId: user._id,
+        location: { lat: coords.latitude, lng: coords.longitude },
+      });
+    });
+
+    sendLocation();
+    const intervalId = setInterval(sendLocation, 5000);
+    return () => clearInterval(intervalId);
+  }, [ride?._id, sendMessage, socketId, user?._id]);
 
   useEffect(() => {
     const input = activeField === "pickup" ? pickup : destination;
@@ -58,6 +90,11 @@ const Home = () => {
       } catch (error) {
         if (error.name !== "CanceledError" && error.name !== "AbortError") {
           setSuggestions([]);
+
+          if (error.response?.status === 401) {
+            localStorage.removeItem("token");
+            navigate("/login", { replace: true });
+          }
         }
       }
     }, 300);
@@ -66,7 +103,7 @@ const Home = () => {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [activeField, pickup, destination]);
+  }, [activeField, destination, navigate, pickup]);
 
   const selectSuggestion = (suggestion) => {
     if (activeField === "pickup") {
@@ -137,7 +174,7 @@ const Home = () => {
       setRideLoading(true);
       setRideError("");
       const token = localStorage.getItem("token");
-      await axios.post(
+      const response = await axios.post(
         `${import.meta.env.VITE_BASE_URL}/rides/create`,
         {
           pickup: pickup.trim(),
@@ -149,6 +186,7 @@ const Home = () => {
         }
       );
 
+      setRide(response.data);
       setConfirmedRidePanel(false);
       setVehicleFoundPanel(true);
     } catch (error) {
@@ -190,48 +228,36 @@ const Home = () => {
   );
 
   useGSAP(() => {
-    if (vehiclePanelOpen){
-      gsap.to(vehiclePanelRef.current,{
-      transform:'translateY(0)'
-    })
-    } else{
-      gsap.to(vehiclePanelRef.current,{
-        transform:'translateY(100%)'
-      })
-    }
-  }, [vehiclePanelOpen])
+    gsap.to(vehiclePanelRef.current, {
+      yPercent: vehiclePanelOpen ? 0 : 100,
+      duration: 0.35,
+      ease: "power2.out",
+    });
+  }, [vehiclePanelOpen]);
 
   useGSAP(() => {
-    if (confirmedRidePanel){
-      gsap.to(confirmedRidePanelRef.current,{
-      transform:'translateY(0)'
-    })
-    } else{
-      gsap.to(confirmedRidePanelRef.current,{
-        transform:'translateY(100%)'
-      })
-    }
-  }, [confirmedRidePanel])
+    gsap.to(confirmedRidePanelRef.current, {
+      yPercent: confirmedRidePanel ? 0 : 100,
+      duration: 0.35,
+      ease: "power2.out",
+    });
+  }, [confirmedRidePanel]);
 
   useGSAP(() => {
-    if (vehicleFoundPanel){
-      gsap.to(vehicleFoundRef.current,{
-      transform:'translateY(0)'
-    })
-    } else{
-      gsap.to(vehicleFoundRef.current,{
-        transform:'translateY(100%)'
-      })
-    }
-  }, [vehicleFoundPanel])
+    gsap.to(vehicleFoundRef.current, {
+      yPercent: vehicleFoundPanel ? 0 : 100,
+      duration: 0.35,
+      ease: "power2.out",
+    });
+  }, [vehicleFoundPanel]);
 
   useGSAP(() => {
     gsap.to(waitingForDriverRef.current, {
-      transform: waitingForDriverPanel ? "translateY(0)" : "translateY(100%)",
+      yPercent: waitingForDriverPanel ? 0 : 100,
       duration: 0.4,
       ease: "power2.out",
     });
-  }, [waitingForDriverPanel])
+  }, [waitingForDriverPanel]);
 
   return (
     <div className="h-screen relative overflow-hidden">
@@ -334,7 +360,7 @@ const Home = () => {
 
         <div
           ref={vehiclePanelRef}
-          className="fixed bottom-0 z-10 w-full translate-y-full bg-transparent"
+          className="fixed bottom-0 z-10 w-full bg-transparent"
         >
           <VehiclePanel
             setConfirmedRidePanel={setConfirmedRidePanel}
@@ -346,7 +372,7 @@ const Home = () => {
 
         <div
           ref={confirmedRidePanelRef}
-          className="fixed bottom-0 z-10 w-full translate-y-full bg-transparent"
+          className="fixed bottom-0 z-10 w-full bg-transparent"
         >
           <ConfirmedRide
             setConfirmedRidePanel={setConfirmedRidePanel}
@@ -361,7 +387,7 @@ const Home = () => {
 
         <div
           ref={waitingForDriverRef}
-          className="fixed bottom-0 z-20 w-full translate-y-full bg-transparent"
+          className="fixed bottom-0 z-20 w-full bg-transparent"
         >
           <WaitingForDriver
             setWaitingForDriverPanel={setWaitingForDriverPanel}
@@ -370,7 +396,7 @@ const Home = () => {
 
         <div
           ref={vehicleFoundRef}
-          className="fixed bottom-0 z-10 w-full translate-y-full bg-transparent"
+          className="fixed bottom-0 z-10 w-full bg-transparent"
         >
           <LookingForDriver
             setVehicleFoundPanel={setVehicleFoundPanel}
@@ -378,6 +404,7 @@ const Home = () => {
             pickup={pickup}
             destination={destination}
             fare={selectedVehicle ? fares[selectedVehicle.type] : null}
+            ride={ride}
           />
         </div>
 

@@ -1,11 +1,25 @@
 # Backend API
 
+## Location Search
+
+Location search works without a paid map account through OpenStreetMap and Photon.
+For broader India-focused address and landmark coverage, add a free Geoapify API key
+to the backend environment:
+
+```env
+GEOAPIFY_API_KEY=your_free_geoapify_key
+```
+
+The backend uses Geoapify first and automatically falls back to Nominatim and Photon
+when the key is missing or unavailable. Geoapify's free plan has daily limits; Google
+Maps-level coverage cannot be provided by an unlimited free API.
+
 ## Base URL
 
 The backend is served from the configured host and port. By default, this app runs on:
 
 ```http
-http://localhost:3000
+http://localhost:4000
 ```
 
 Authentication uses a JWT token stored in a cookie named `token` or sent in the `Authorization` header:
@@ -505,7 +519,8 @@ GET /maps/get-distance-time?origin=<origin>&destination=<destination>
 
 ### Get Suggestions
 
-Returns location suggestions for typed input.
+Returns location suggestions for typed input. Results combine Geoapify when configured,
+Nominatim, and Photon, with duplicate coordinates removed.
 
 #### Endpoint
 
@@ -524,9 +539,11 @@ GET /maps/get-suggestions?input=<text>
 ```json
 {
   "suggestions": [
-    "New Delhi",
-    "Noida",
-    "NCR"
+    {
+      "description": "Connaught Place, New Delhi, Delhi, India",
+      "lat": 28.6315,
+      "lng": 77.2167
+    }
   ]
 }
 ```
@@ -613,7 +630,7 @@ Calculates an estimated fare for a trip between two locations.
 #### Endpoint
 
 ```http
-GET /rides/get-fare?pickup=<pickup>&destination=<destination>
+GET /rides/get-fare?pickup=<pickup>&destination=<destination>&vehicleType=<type>
 ```
 
 #### Authentication
@@ -624,6 +641,7 @@ Requires a valid authenticated user token.
 
 - `pickup`: required, minimum 3 characters
 - `destination`: required, minimum 3 characters
+- `vehicleType`: required, one of `auto`, `car`, `moto`
 
 #### Success Response
 
@@ -657,6 +675,65 @@ Requires a valid authenticated user token.
   ]
 }
 ```
+
+---
+
+### Accept Ride
+
+Assigns a pending ride to the authenticated captain before pickup navigation.
+
+#### Endpoint
+
+```http
+POST /rides/accept
+```
+
+#### Request Body
+
+```json
+{
+  "rideId": "<ride-id>"
+}
+```
+
+### Confirm Ride With OTP
+
+Validates the passenger's four-digit OTP and changes the ride status to `ongoing`.
+
+#### Endpoint
+
+```http
+POST /rides/confirm
+```
+
+#### Request Body
+
+```json
+{
+  "rideId": "<ride-id>",
+  "otp": "1234"
+}
+```
+
+### Complete Ride
+
+Marks an ongoing ride as completed and emits `ride-completed` to the user's socket.
+
+#### Endpoint
+
+```http
+POST /rides/complete
+```
+
+#### Request Body
+
+```json
+{
+  "rideId": "<ride-id>"
+}
+```
+
+All three ride action endpoints require captain authentication.
 
 ---
 

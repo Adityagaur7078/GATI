@@ -1,6 +1,6 @@
 # GATI — Ride Booking Frontend
 
-GATI is a React frontend built with Vite. It currently provides separate authentication flows and protected routes for users and captains.
+GATI is a React ride-booking frontend built with Vite. It provides separate authenticated user and captain experiences with live maps and Socket.IO ride updates.
 
 ## Features
 
@@ -12,6 +12,12 @@ GATI is a React frontend built with Vite. It currently provides separate authent
 - [x] Responsive authentication interfaces
 - [x] HTML form validation
 - [x] Environment-based backend URL configuration
+- [x] User ride creation and fare estimation
+- [x] Captain ride requests and acceptance
+- [x] OTP-based ride start confirmation
+- [x] Live captain and user location tracking
+- [x] OpenStreetMap maps with driving routes and map controls
+- [x] Ride completion and user redirect to home
 
 ### Authentication
 
@@ -36,15 +42,15 @@ GATI is a React frontend built with Vite. It currently provides separate authent
 - [x] Captain profile verification
 - [x] Protected captain home route
 - [x] Captain logout route and backend request
+- [x] Incoming ride popup with accept and ignore actions
+- [x] Pickup navigation and OTP confirmation flow
+- [x] Ride completion flow
 
-### Planned
+### Remaining Work
 
-- [ ] Ride booking functionality
-- [ ] User and captain dashboards
-- [ ] Ride requests and acceptance
-- [ ] Maps and live tracking
-- [ ] Payments
-- [ ] Improved loading and error handling
+- [ ] Persistent authentication state after page reload
+- [ ] Payment gateway integration
+- [ ] Automated frontend and backend tests
 
 ## Tech Stack
 
@@ -55,6 +61,9 @@ GATI is a React frontend built with Vite. It currently provides separate authent
 | React Router DOM | Client-side routing |
 | Axios | Backend API communication |
 | React Context API | User and captain state management |
+| Socket.IO | Live ride events and location updates |
+| Leaflet / React Leaflet | Interactive maps |
+| OpenStreetMap / OSRM | Map tiles and driving routes |
 | Tailwind CSS | Styling |
 | JavaScript | Application logic |
 
@@ -105,6 +114,8 @@ frontend/
 | `/user/logout` | User protected | User logout |
 | `/captain-home` | Captain protected | Captain home page |
 | `/captain/logout` | Captain protected | Captain logout |
+| `/captain/riding` | Captain protected | Active ride and completion flow |
+| `/riding` | User protected | Active ride and live tracking |
 
 ## Authentication Flow
 
@@ -184,8 +195,10 @@ npm install
 Create `frontend/.env` and add:
 
 ```env
-VITE_BASE_URL=<backend-base-url>
+VITE_BASE_URL=http://localhost:4000
 ```
+
+`VITE_BASE_URL` is used for authentication, rides, maps, and Socket.IO.
 
 ### Start the Development Server
 
@@ -221,19 +234,19 @@ npm run lint
 - Axios-based backend communication
 - Environment-based backend configuration
 
-### Currently in Progress
+### Implemented Ride Flow
 
-- Expanding user and captain home pages
-- Improving authentication error and loading states
-- Refining logout and session handling
+- User selects locations and vehicle type.
+- Backend calculates fare and creates a ride with a four-digit OTP.
+- Nearby captains receive the ride request in real time.
+- Captain accepts the ride and sees a driving route to the user.
+- Captain enters the user's OTP to start the ride.
+- Both screens receive live location updates.
+- Captain completes the ride and the user returns to `/home`.
 
 ### Future Work
 
-- Ride booking
-- Ride requests and acceptance
-- Maps and live tracking
-- Payments
-- User and captain dashboards
+- Payment gateway integration
 - Frontend testing
 
 ## License
