@@ -50,7 +50,7 @@ const ConfirmedRide = ({
           </span>
           <div>
             <p className="text-sm font-semibold">Pickup location</p>
-            <p className="max-w-[220px] truncate text-xs text-gray-500">{pickup}</p>
+            <p className="max-w-55 truncate text-xs text-gray-500">{pickup}</p>
           </div>
         </div>
 
@@ -60,7 +60,7 @@ const ConfirmedRide = ({
           </span>
           <div>
             <p className="text-sm font-semibold">Destination</p>
-            <p className="max-w-[220px] truncate text-xs text-gray-500">{destination}</p>
+            <p className="max-w-55 truncate text-xs text-gray-500">{destination}</p>
           </div>
         </div>
 
