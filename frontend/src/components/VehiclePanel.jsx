@@ -1,7 +1,7 @@
 import React from "react";
 import gaticarimage from "../assets/gaticarimage.png";
 import gatibike from "../assets/gatibike.png";
-import gatiautoimage from "../assets/gatiautoimage.png";
+import gatiautoimage from "../assets/GatiAutoImage.png";
 
 const VehiclePanel = ({
   setVehiclePanelOpen,
