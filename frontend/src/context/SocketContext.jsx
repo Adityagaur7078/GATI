@@ -10,7 +10,12 @@ const SocketContext = ({ children }) => {
 
   useEffect(() => {
     const connectSocket = () => {
-      const token = localStorage.getItem('token') || localStorage.getItem('captainToken')
+      const userToken = localStorage.getItem('token')
+      const captainToken = localStorage.getItem('captainToken')
+      const isCaptainRoute = window.location.pathname.toLowerCase().includes('captain')
+      const token = isCaptainRoute
+        ? (captainToken || userToken)
+        : (userToken || captainToken)
 
       socketRef.current?.disconnect()
       socketRef.current = null

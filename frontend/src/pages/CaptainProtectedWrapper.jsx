@@ -3,11 +3,13 @@ import React, { useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CaptainDataContext } from '../context/CaptainContext'
 import { SocketDataContext } from '../context/SocketContext'
+import PageSkeleton from '../components/PageSkeleton'
 const CaptainProtectedWrapper = ({ children }) => {
     const navigate = useNavigate()
     const { setCaptain } = React.useContext(CaptainDataContext)
     const { captain } = useContext(CaptainDataContext)
     const { socketId, sendMessage } = useContext(SocketDataContext)
+    const [isCheckingAuth, setIsCheckingAuth] = React.useState(true)
 
     useEffect(() => {
         if (!captain?._id || !socketId) {
@@ -36,6 +38,7 @@ const CaptainProtectedWrapper = ({ children }) => {
             if (response.status === 200) {
                 setCaptain(response.data)
             }
+            setIsCheckingAuth(false)
 
         })
         .catch(err => {
@@ -43,6 +46,7 @@ const CaptainProtectedWrapper = ({ children }) => {
             console.log(err)
 
             localStorage.removeItem('captainToken')
+            setIsCheckingAuth(false)
             navigate('/captain-login')
 
         })
@@ -51,7 +55,7 @@ const CaptainProtectedWrapper = ({ children }) => {
 
     return (
         <>
-            {children}
+            {isCheckingAuth ? <PageSkeleton variant='captain' /> : children}
         </>
     )
 }

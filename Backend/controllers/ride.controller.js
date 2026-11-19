@@ -40,7 +40,7 @@ module.exports.createRide = async (req, res) => {
             : vehicleType;
 
         const matchingCaptains = await captainModel.find({
-            socketId: { $ne: null },
+            socketId: { $ne: null, $ne: '' },
             'vehicle.vehicleType': captainVehicleType,
         }).select('socketId');
 

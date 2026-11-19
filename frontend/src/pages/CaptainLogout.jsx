@@ -27,12 +27,14 @@ const CaptainLogout = () => {
 
                 if (response.status === 200) {
                     localStorage.removeItem('captainToken')
+                    window.dispatchEvent(new Event('auth-token-changed'))
                     navigate('/captain-login')
                 }
             } catch (error) {
                 console.error('Logout error:', error)
 
                 localStorage.removeItem('captainToken')
+                window.dispatchEvent(new Event('auth-token-changed'))
                 navigate('/captain-login')
             }
         }

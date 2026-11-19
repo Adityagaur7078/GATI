@@ -1,12 +1,14 @@
 const mongoose = require('mongoose');
 
 async function connectToDb() {
-    if (!process.env.MONGO_URI) {
+    const configuredUri = process.env.MONGO_URI;
+
+    if (!configuredUri) {
         throw new Error('MONGO_URI is not configured');
     }
 
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('Connected to DB');
+    await mongoose.connect(configuredUri);
+    console.log('Connected to configured MongoDB');
 }
 
 module.exports = connectToDb;

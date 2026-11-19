@@ -14,6 +14,15 @@ const LocationSearchPanel = ({ suggestions, isLoading, onSelectSuggestion }) => 
     )
   }
 
+  if (!suggestions.length) {
+    return (
+      <div className='py-8 text-center text-sm text-gray-500'>
+        <i className='ri-map-pin-line mr-2' />
+        Start typing to search for a location
+      </div>
+    )
+  }
+
   return (
     <div>
       {

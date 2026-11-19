@@ -3,10 +3,12 @@ import React, { useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SocketDataContext } from '../context/SocketContext'
 import { UserDataContext } from '../context/UserContext'
+import PageSkeleton from '../components/PageSkeleton'
 const UserProtectWrapper = ({ children }) => {
     const navigate = useNavigate()
     const { user, setUser } = useContext(UserDataContext)
     const { socketId, sendMessage } = useContext(SocketDataContext)
+    const [isCheckingAuth, setIsCheckingAuth] = React.useState(true)
 
     useEffect(() => {
         if (!user?._id || !socketId) {
@@ -38,6 +40,7 @@ const UserProtectWrapper = ({ children }) => {
             if (response.status === 200) {
                 setUser(response.data)
             }
+            setIsCheckingAuth(false)
 
         })
         .catch(error => {
@@ -45,15 +48,16 @@ const UserProtectWrapper = ({ children }) => {
             console.log('User authentication failed:', error)
 
             localStorage.removeItem('token')
+            setIsCheckingAuth(false)
             navigate('/login')
 
         })
 
-    }, [navigate])
+    }, [navigate, setUser])
 
     return (
         <>
-            {children}
+            {isCheckingAuth ? <PageSkeleton variant='user' /> : children}
         </>
     )
 }
