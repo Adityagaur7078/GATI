@@ -9,26 +9,49 @@ const SocketContext = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    const socketConnection = io(import.meta.env.VITE_BASE_URL)
+    const connectSocket = () => {
+      const token = localStorage.getItem('token') || localStorage.getItem('captainToken')
 
-    const handleConnect = () => {
-      setSocketId(socketConnection.id)
-      setIsConnected(true)
-    }
-
-    const handleDisconnect = () => {
+      socketRef.current?.disconnect()
+      socketRef.current = null
       setSocketId(null)
       setIsConnected(false)
+
+      if (!token) {
+        return
+      }
+
+      const socketConnection = io(import.meta.env.VITE_BASE_URL, {
+        auth: { token },
+        transports: ['polling'],
+        upgrade: false,
+      })
+
+      const handleConnect = () => {
+        setSocketId(socketConnection.id)
+        setIsConnected(true)
+      }
+
+      const handleDisconnect = () => {
+        setSocketId(null)
+        setIsConnected(false)
+      }
+
+      socketConnection.on('connect', handleConnect)
+      socketConnection.on('disconnect', handleDisconnect)
+      socketRef.current = socketConnection
     }
 
-    socketConnection.on('connect', handleConnect)
-    socketConnection.on('disconnect', handleDisconnect)
-    socketRef.current = socketConnection
+    const handleAuthTokenChanged = () => {
+      connectSocket()
+    }
+
+    connectSocket()
+    window.addEventListener('auth-token-changed', handleAuthTokenChanged)
 
     return () => {
-      socketConnection.off('connect', handleConnect)
-      socketConnection.off('disconnect', handleDisconnect)
-      socketConnection.disconnect()
+      window.removeEventListener('auth-token-changed', handleAuthTokenChanged)
+      socketRef.current?.disconnect()
       socketRef.current = null
     }
   }, [])

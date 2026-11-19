@@ -1,6 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import gatilogoblack from "../assets/gatilogoblack.png";
-import gatimap from "../assets/gatimap.gif";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import "remixicon/fonts/remixicon.css";
@@ -13,6 +12,7 @@ import LookingForDriver from "../components/LookingForDriver";
 import axios from "axios";
 import { SocketDataContext } from "../context/SocketContext";
 import { UserDataContext } from "../context/UserContext";
+import RideMap from "../components/RideMap";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -25,6 +25,12 @@ const Home = () => {
   const [waitingForDriverPanel, setWaitingForDriverPanel] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [pickupLocation, setPickupLocation] = useState(null);
+  const [destinationLocation, setDestinationLocation] = useState(null);
+  const [currentUserLocation, setCurrentUserLocation] = useState(null);
+  const [pickupSelected, setPickupSelected] = useState(false);
+  const [destinationSelected, setDestinationSelected] = useState(false);
   const [fares, setFares] = useState({});
   const [fareLoading, setFareLoading] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
@@ -52,6 +58,31 @@ const Home = () => {
   }, [navigate, receiveMessage, socketId]);
 
   useEffect(() => {
+    if (!navigator.geolocation) return undefined;
+
+    const updateLocation = ({ coords }) => {
+      setCurrentUserLocation({
+        lat: coords.latitude,
+        lng: coords.longitude,
+      });
+    };
+
+    navigator.geolocation.getCurrentPosition(updateLocation, undefined, {
+      enableHighAccuracy: true,
+      maximumAge: 10000,
+      timeout: 10000,
+    });
+
+    const watchId = navigator.geolocation.watchPosition(updateLocation, undefined, {
+      enableHighAccuracy: true,
+      maximumAge: 5000,
+      timeout: 10000,
+    });
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, []);
+
+  useEffect(() => {
     if (!ride?._id || !user?._id || !socketId || !navigator.geolocation) return undefined;
 
     const sendLocation = () => navigator.geolocation.getCurrentPosition(({ coords }) => {
@@ -68,12 +99,15 @@ const Home = () => {
 
   useEffect(() => {
     const input = activeField === "pickup" ? pickup : destination;
+    const locationSelected = activeField === "pickup" ? pickupSelected : destinationSelected;
 
-    if (!input || input.trim().length < 3) {
+    if (locationSelected || !input || input.trim().length < 3) {
+      setSuggestionsLoading(false);
       return;
     }
 
     const controller = new AbortController();
+    setSuggestionsLoading(true);
     const timeoutId = setTimeout(async () => {
       try {
         const token = localStorage.getItem("token");
@@ -96,6 +130,8 @@ const Home = () => {
             navigate("/login", { replace: true });
           }
         }
+      } finally {
+        setSuggestionsLoading(false);
       }
     }, 300);
 
@@ -103,16 +139,27 @@ const Home = () => {
       clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [activeField, destination, navigate, pickup]);
+  }, [activeField, destination, destinationSelected, navigate, pickup, pickupSelected]);
 
   const selectSuggestion = (suggestion) => {
     if (activeField === "pickup") {
       setPickup(suggestion.description);
+      setPickupLocation({ lat: suggestion.lat, lng: suggestion.lng });
+      setPickupSelected(true);
+      if (destinationSelected) {
+        setPanelOpen(false);
+      }
     } else if (activeField === "destination") {
       setDestination(suggestion.description);
+      setDestinationLocation({ lat: suggestion.lat, lng: suggestion.lng });
+      setDestinationSelected(true);
+      if (pickupSelected) {
+        setPanelOpen(false);
+      }
     }
 
     setSuggestions([]);
+    setSuggestionsLoading(false);
   };
 
   const submitHandler = (e) => {
@@ -196,36 +243,6 @@ const Home = () => {
     }
   };
 
-  useGSAP(
-    () => {
-      if (panelOpen) {
-        gsap.to(panelRef.current, {
-          height: "70%",
-          padding: "0px 24px 24px 24px",
-          duration: 0.4,
-          ease: "power2.out",
-        });
-
-        gsap.to(panelCloseRef.current, {
-          opacity: 1,
-          duration: 0.4,
-        });
-      } else {
-        gsap.to(panelRef.current, {
-          height: "0%",
-          padding: "0px",
-          duration: 0.3,
-          ease: "power2.inOut",
-        });
-
-        gsap.to(panelCloseRef.current, {
-          opacity: 0,
-          duration: 0.2,
-        });
-      }
-    },
-    { dependencies: [panelOpen] }
-  );
 
   useGSAP(() => {
     gsap.to(vehiclePanelRef.current, {
@@ -260,33 +277,36 @@ const Home = () => {
   }, [waitingForDriverPanel]);
 
   return (
-    <div className="h-screen relative overflow-hidden">
+    <div className="relative h-[100dvh] overflow-hidden bg-slate-100">
 
       <img
-        className="w-16 absolute left-5 top-5 z-10"
+        className="absolute left-5 top-5 z-[1200] w-16"
         src={gatilogoblack}
         alt="Gati"
       />
 
-      <div className="h-screen w-screen">
-        <img
-          className="h-full w-full object-cover"
-          src={gatimap}
-          alt="Map"
+      <div className={`absolute inset-x-0 top-0 w-full transition-[height] duration-500 ease-in-out ${panelOpen ? "h-[0dvh]" : "h-[70dvh]"}`}>
+        <RideMap
+          pickupLocation={pickupLocation}
+          destinationLocation={destinationLocation}
+          userLocation={currentUserLocation}
+          routeTarget={destinationLocation}
         />
       </div>
 
-      <div className="flex flex-col justify-end h-screen absolute top-0 w-full">
+      <div
+        className={`absolute inset-x-0 z-[1100] flex flex-col transition-[height,top,bottom] duration-500 ease-in-out ${panelOpen ? "inset-y-0 h-[100dvh] justify-start" : "bottom-0 h-[30dvh] min-h-[220px] max-h-[320px] justify-end"}`}
+      >
 
         <div
-          className={`h-[30%] px-6 pb-0.5 bg-white relative transition-all duration-300 ${panelOpen ? "pt-16" : "pt-6"
+          className={`relative shrink-0 bg-white px-6 ${panelOpen ? "pt-20 pb-4" : "pt-6 pb-[70px]"
             }`}
         >
 
           <h5
             ref={panelCloseRef}
             onClick={() => setPanelOpen(false)}
-            className="opacity-0 absolute right-5 top-20 text-2xl cursor-pointer"
+            className={`absolute right-5 top-3 text-2xl cursor-pointer transition-opacity ${panelOpen ? "opacity-100" : "pointer-events-none opacity-0"}`}
           >
             <i className="ri-arrow-down-s-line"></i>
           </h5>
@@ -313,6 +333,8 @@ const Home = () => {
                 value={pickup}
                 onChange={(e) => {
                   setSuggestions([]);
+                  setPickupSelected(false);
+                  setPickupLocation(null);
                   setPickup(e.target.value);
                 }}
                 className="bg-[#eee] px-12 py-2 text-base rounded-lg w-full border border-gray-300"
@@ -326,6 +348,8 @@ const Home = () => {
                 value={destination}
                 onChange={(e) => {
                   setSuggestions([]);
+                  setDestinationSelected(false);
+                  setDestinationLocation(null);
                   setDestination(e.target.value);
                 }}
                 className="bg-[#eee] px-12 py-2 text-base rounded-lg w-full mt-3 border border-gray-300"
@@ -335,7 +359,7 @@ const Home = () => {
 
             </div>
 
-            {pickup.trim() && destination.trim() && (
+            {pickupSelected && destinationSelected && (
               <button
                 type="button"
                 onClick={chooseVehicle}
@@ -350,63 +374,73 @@ const Home = () => {
 
         <div
           ref={panelRef}
-          className="bg-white h-0 overflow-hidden"
+          className={`min-h-0 overflow-y-auto bg-white px-6 ${panelOpen ? "flex-1 pb-6" : "h-0 overflow-hidden"}`}
         >
           <LocationSearchPanel
             suggestions={suggestions}
+            isLoading={suggestionsLoading}
             onSelectSuggestion={selectSuggestion}
           />
         </div>
 
-        <div
-          ref={vehiclePanelRef}
-          className="fixed bottom-0 z-10 w-full bg-transparent"
-        >
-          <VehiclePanel
-            setConfirmedRidePanel={setConfirmedRidePanel}
-            setVehiclePanelOpen={setVehiclePanelOpen}
-            fares={fares}
-            setSelectedVehicle={setSelectedVehicle}
-          />
-        </div>
+        {vehiclePanelOpen && (
+          <div
+            ref={vehiclePanelRef}
+            className="fixed bottom-0 z-10 w-full bg-transparent"
+          >
+            <VehiclePanel
+              setConfirmedRidePanel={setConfirmedRidePanel}
+              setVehiclePanelOpen={setVehiclePanelOpen}
+              fares={fares}
+              setSelectedVehicle={setSelectedVehicle}
+            />
+          </div>
+        )}
 
-        <div
-          ref={confirmedRidePanelRef}
-          className="fixed bottom-0 z-10 w-full bg-transparent"
-        >
-          <ConfirmedRide
-            setConfirmedRidePanel={setConfirmedRidePanel}
-            confirmRide={confirmRide}
-            selectedVehicle={selectedVehicle}
-            pickup={pickup}
-            destination={destination}
-            rideError={rideError}
-            rideLoading={rideLoading}
-          />
-        </div>
+        {confirmedRidePanel && (
+          <div
+            ref={confirmedRidePanelRef}
+            className="fixed bottom-0 z-10 w-full bg-transparent"
+          >
+            <ConfirmedRide
+              setConfirmedRidePanel={setConfirmedRidePanel}
+              confirmRide={confirmRide}
+              selectedVehicle={selectedVehicle}
+              pickup={pickup}
+              destination={destination}
+              rideError={rideError}
+              rideLoading={rideLoading}
+            />
+          </div>
+        )}
 
-        <div
-          ref={waitingForDriverRef}
-          className="fixed bottom-0 z-20 w-full bg-transparent"
-        >
-          <WaitingForDriver
-            setWaitingForDriverPanel={setWaitingForDriverPanel}
-          />
-        </div>
+        {waitingForDriverPanel && (
+          <div
+            ref={waitingForDriverRef}
+            className="fixed bottom-0 z-20 w-full bg-transparent"
+          >
+            <WaitingForDriver
+              setWaitingForDriverPanel={setWaitingForDriverPanel}
+              ride={ride}
+            />
+          </div>
+        )}
 
-        <div
-          ref={vehicleFoundRef}
-          className="fixed bottom-0 z-10 w-full bg-transparent"
-        >
-          <LookingForDriver
-            setVehicleFoundPanel={setVehicleFoundPanel}
-            selectedVehicle={selectedVehicle}
-            pickup={pickup}
-            destination={destination}
-            fare={selectedVehicle ? fares[selectedVehicle.type] : null}
-            ride={ride}
-          />
-        </div>
+        {vehicleFoundPanel && (
+          <div
+            ref={vehicleFoundRef}
+            className="fixed bottom-0 z-10 w-full bg-transparent"
+          >
+            <LookingForDriver
+              setVehicleFoundPanel={setVehicleFoundPanel}
+              selectedVehicle={selectedVehicle}
+              pickup={pickup}
+              destination={destination}
+              fare={selectedVehicle ? fares[selectedVehicle.type] : null}
+              ride={ride}
+            />
+          </div>
+        )}
 
       </div>
     </div >

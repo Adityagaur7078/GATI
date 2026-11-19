@@ -8,10 +8,15 @@ const mapRoutes = require("./routes/map.routes");
 const rideRoutes = require("./routes/ride.routes");
 
 const app = express();
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    "http://localhost:5173",
+    "https://gati-tawny-tau.vercel.app",
+].filter(Boolean);
 
 // Middleware
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: allowedOrigins,
     credentials: true,
 }));
 

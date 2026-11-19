@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import "remixicon/fonts/remixicon.css";
 import gaticarimage from "../assets/gaticarimage.png";
+import gatibike from "../assets/gatibike.png";
+import gatiautoimage from "../assets/GatiAutoImage.png";
 import RideMap from "../components/RideMap";
 import { SocketDataContext } from "../context/SocketContext";
 
@@ -13,6 +15,19 @@ const Riding = () => {
   const ride = state?.ride;
   const [captainLocation, setCaptainLocation] = useState(ride?.captain?.location || null);
   const [userLocation, setUserLocation] = useState(null);
+  const captain = ride?.captain;
+  const captainName = captain?.fullName
+    ? `${captain.fullName.firstName || ""} ${captain.fullName.lastName || ""}`.trim()
+    : "Your driver";
+  const vehicleType = ride?.vehicleType || captain?.vehicle?.vehicleType;
+  const vehicleImage =
+    vehicleType === "moto" || vehicleType === "motorcycle" ? gatibike :
+    vehicleType === "auto" ? gatiautoimage :
+    gaticarimage;
+  const vehicleName = captain?.vehicle
+    ? `${captain.vehicle.color ? `${captain.vehicle.color} ` : ""}${vehicleType === "motorcycle" || vehicleType === "moto" ? "Motorcycle" : vehicleType === "auto" ? "Auto" : "Car"}`
+    : "Gati vehicle";
+  const vehiclePlate = captain?.vehicle?.plate || "Plate unavailable";
   useEffect(() => {
     if (!socketId) return undefined;
     return receiveMessage("captain-location", setCaptainLocation);
@@ -45,6 +60,8 @@ const Riding = () => {
           destinationLocation={ride?.destinationLocation}
           captainLocation={captainLocation}
           userLocation={userLocation}
+          captainName={captainName}
+          userName={`${ride?.user?.fullName?.firstName || ""} ${ride?.user?.fullName?.lastName || ""}`.trim()}
         />
 
         <Link
@@ -67,8 +84,8 @@ const Riding = () => {
         <div className="mb-3 grid grid-cols-[64px_1fr_48px] items-center gap-3 rounded-2xl border border-emerald-200 bg-linear-to-r from-emerald-50 to-white p-3 shadow-sm">
           <div className="flex h-16 w-16 items-center justify-center overflow-hidden">
             <img
-              src={gaticarimage}
-              alt="Vehicle"
+              src={vehicleImage}
+              alt={vehicleName}
               className="h-full w-full object-contain"
             />
           </div>
@@ -77,12 +94,12 @@ const Riding = () => {
             <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
               Your driver
             </p>
-            <p className="text-base font-extrabold text-slate-950">Amishah</p>
+            <p className="text-base font-extrabold text-slate-950">{captainName}</p>
             <p className="text-xs font-semibold text-slate-700">
-              Maruti Suzuki Alto
+              {vehicleName}
             </p>
             <p className="mt-1 inline-block rounded-md bg-slate-950 px-2 py-1 text-[10px] font-extrabold tracking-widest text-white">
-              MP04 AB 1234
+              {vehiclePlate}
             </p>
           </div>
 

@@ -1,8 +1,21 @@
-import React, { useEffect, useState } from "react";
-import { CircleMarker, MapContainer, Polyline, TileLayer, useMap } from "react-leaflet";
+import React, { useEffect, useRef, useState } from "react";
+import { CircleMarker, Marker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
+import { divIcon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 const DEFAULT_CENTER = [20.5937, 78.9629];
+const USER_LOCATION_ICON = divIcon({
+  className: "gati-user-location-marker",
+  html: '<span aria-label="Your location" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;font-size:32px;line-height:38px;text-shadow:0 2px 4px rgba(0,0,0,.35)">📍</span>',
+  iconSize: [38, 38],
+  iconAnchor: [19, 38],
+});
+const CAPTAIN_LOCATION_ICON = divIcon({
+  className: "gati-captain-location-marker",
+  html: '<span aria-label="Captain location" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;font-size:32px;line-height:38px;text-shadow:0 2px 4px rgba(0,0,0,.35)">📍</span>',
+  iconSize: [38, 38],
+  iconAnchor: [19, 38],
+});
 
 const toMapPoint = (location) => {
   const lat = Number(location?.lat);
@@ -13,25 +26,41 @@ const toMapPoint = (location) => {
 
 const FitMap = ({ points, followLocation }) => {
   const map = useMap();
-  const [hasInitialFit, setHasInitialFit] = useState(false);
+  const hasInitialFit = useRef(false);
+  const pointsKey = JSON.stringify(points);
 
   useEffect(() => {
-    if (hasInitialFit && !followLocation) return;
+    if (hasInitialFit.current && !followLocation) return;
 
-    const validPoints = points.filter(Boolean);
+    const validPoints = JSON.parse(pointsKey).filter(Boolean);
     if (validPoints.length === 1) {
       map.setView(validPoints[0], 14);
     } else if (validPoints.length > 1) {
       map.fitBounds(validPoints, { padding: [40, 40] });
     }
-    setHasInitialFit(true);
-  }, [followLocation, hasInitialFit, map, points]);
+    hasInitialFit.current = true;
+  }, [followLocation, map, pointsKey]);
 
   useEffect(() => {
-    if (followLocation && points[0]) {
-      map.setView(points[0], Math.max(map.getZoom(), 15), { animate: true });
+    const validPoints = JSON.parse(pointsKey).filter(Boolean);
+    if (followLocation && validPoints[0]) {
+      map.setView(validPoints[0], Math.max(map.getZoom(), 15), { animate: true });
     }
-  }, [followLocation, map, points]);
+  }, [followLocation, map, pointsKey]);
+
+  return null;
+};
+
+const SyncCurrentLocation = ({ location }) => {
+  const map = useMap();
+  const locationKey = JSON.stringify(location);
+
+  useEffect(() => {
+    const point = JSON.parse(locationKey);
+    if (point) {
+      map.setView(point, 16, { animate: true });
+    }
+  }, [locationKey, map]);
 
   return null;
 };
@@ -67,22 +96,25 @@ const MapControls = ({ followLocation, onToggleDriving }) => {
       )}
     </div>
   );
-
-  return null;
 };
 
 const DrivingRoute = ({ start, end, onRoute }) => {
   const [route, setRoute] = useState([]);
+  const startKey = JSON.stringify(start);
+  const endKey = JSON.stringify(end);
 
   useEffect(() => {
-    if (!start || !end) {
-      setRoute([]);
+    const startPoint = JSON.parse(startKey);
+    const endPoint = JSON.parse(endKey);
+
+    if (!startPoint || !endPoint) {
+      setRoute((current) => current.length ? [] : current);
       onRoute([]);
       return undefined;
     }
 
     const controller = new AbortController();
-    const url = `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=full&geometries=geojson&steps=false`;
+    const url = `https://router.project-osrm.org/route/v1/driving/${startPoint[1]},${startPoint[0]};${endPoint[1]},${endPoint[0]}?overview=full&geometries=geojson&steps=false`;
 
     fetch(url, { signal: controller.signal })
       .then((response) => {
@@ -96,20 +128,31 @@ const DrivingRoute = ({ start, end, onRoute }) => {
       })
       .catch((error) => {
         if (error.name !== "AbortError") {
-          setRoute([]);
+          setRoute((current) => current.length ? [] : current);
           onRoute([]);
         }
       });
 
     return () => controller.abort();
-  }, [end, onRoute, start]);
+  }, [endKey, onRoute, startKey]);
 
   return route.length > 1 ? (
     <Polyline positions={route} pathOptions={{ color: "#2563eb", weight: 6, opacity: 0.85 }} />
   ) : null;
 };
 
-const RideMap = ({ pickupLocation, destinationLocation, captainLocation, userLocation, routeTarget, followLocation = false, onToggleDriving, className = "" }) => {
+const RideMap = ({
+  pickupLocation,
+  destinationLocation,
+  captainLocation,
+  userLocation,
+  captainName,
+  userName,
+  routeTarget,
+  followLocation = false,
+  onToggleDriving,
+  className = ""
+}) => {
   const pickup = toMapPoint(pickupLocation);
   const destination = toMapPoint(destinationLocation);
   const captain = toMapPoint(captainLocation);
@@ -124,15 +167,33 @@ const RideMap = ({ pickupLocation, destinationLocation, captainLocation, userLoc
   return (
     <MapContainer center={center} zoom={13} zoomControl={false} className={`h-full w-full ${className}`}>
       <TileLayer
-        attribution='&copy; OpenStreetMap contributors'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={20}
       />
+      <SyncCurrentLocation location={captain || user} />
       <FitMap points={[captain || user || center, ...points]} followLocation={followLocation} />
       <DrivingRoute start={routeStart} end={routeEnd} onRoute={handleRoute} />
-      {pickup && <CircleMarker center={pickup} radius={9} pathOptions={{ color: "#059669", fillColor: "#10b981", fillOpacity: 1 }} />}
-      {destination && <CircleMarker center={destination} radius={9} pathOptions={{ color: "#dc2626", fillColor: "#ef4444", fillOpacity: 1 }} />}
-      {captain && <CircleMarker center={captain} radius={11} pathOptions={{ color: "#111827", fillColor: "#facc15", fillOpacity: 1 }} />}
-      {user && <CircleMarker center={user} radius={11} pathOptions={{ color: "#1d4ed8", fillColor: "#60a5fa", fillOpacity: 1 }} />}
+      {pickup && (
+        <CircleMarker center={pickup} radius={9} pathOptions={{ color: "#059669", fillColor: "#10b981", fillOpacity: 1 }}>
+          <Tooltip permanent direction="top" offset={[0, -8]}>Pickup</Tooltip>
+        </CircleMarker>
+      )}
+      {destination && (
+        <CircleMarker center={destination} radius={9} pathOptions={{ color: "#dc2626", fillColor: "#ef4444", fillOpacity: 1 }}>
+          <Tooltip permanent direction="top" offset={[0, -8]}>Destination</Tooltip>
+        </CircleMarker>
+      )}
+      {captain && (
+        <Marker position={captain} icon={CAPTAIN_LOCATION_ICON}>
+          <Tooltip permanent direction="top" offset={[0, -10]}>{captainName || "Captain"}</Tooltip>
+        </Marker>
+      )}
+      {user && (
+        <Marker position={user} icon={USER_LOCATION_ICON}>
+          <Tooltip permanent direction="top" offset={[0, -10]}>{userName || "Your location"}</Tooltip>
+        </Marker>
+      )}
       {captain && user && !destination && <Polyline positions={[captain, user]} pathOptions={{ color: "#0f766e", dashArray: "8 8", weight: 4 }} />}
       <MapControls followLocation={followLocation} onToggleDriving={onToggleDriving} />
     </MapContainer>

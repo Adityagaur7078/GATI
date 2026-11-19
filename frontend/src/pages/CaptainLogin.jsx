@@ -3,10 +3,12 @@ import gatilogoblackcaptain from "../assets/gatilogoblackcaptain.png";
 import { Link, useNavigate } from 'react-router-dom';
 import { CaptainDataContext } from '../context/CaptainContext';
 import axios from 'axios';
+import { getAuthErrorMessage } from '../utils/authError';
 
 const CaptainLogin = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [errorMessage, setErrorMessage] = useState('')
 
     const navigate = useNavigate()
 
@@ -14,24 +16,30 @@ const CaptainLogin = () => {
 
     const submitHandler = async (e) => {
         e.preventDefault();
+        setErrorMessage('')
 
         const captainData = {
             email: email,
             password: password
         };
 
-        const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/captains/login`, captainData)
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/captains/login`, captainData)
 
-        if (response.status === 200) {
-            const data = response.data
+            if (response.status === 200) {
+                const data = response.data
 
-            setCaptain(data.captain)
-            localStorage.setItem('captainToken', data.token)
-            navigate('/captain-home')
+                setCaptain(data.captain)
+                localStorage.setItem('captainToken', data.token)
+                window.dispatchEvent(new Event('auth-token-changed'))
+                navigate('/captain-home')
+            }
+
+            setEmail('');
+            setPassword('');
+        } catch (error) {
+            setErrorMessage(getAuthErrorMessage(error, 'Unable to log in. Please try again.'))
         }
-
-        setEmail('');
-        setPassword('');
     }
 
     return (
@@ -78,7 +86,14 @@ const CaptainLogin = () => {
                             setPassword(e.target.value)
                         }}
                         placeholder='Password'
+                        minLength={8}
                     />
+
+                    {errorMessage && (
+                        <p className='text-red-600 text-sm mb-4' role='alert'>
+                            {errorMessage}
+                        </p>
+                    )}
 
                     <button
                         type="submit"

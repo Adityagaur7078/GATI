@@ -1,13 +1,9 @@
 import axios from 'axios'
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CaptainDataContext } from '../context/CaptainContext'
 import { SocketDataContext } from '../context/SocketContext'
-
 const CaptainProtectedWrapper = ({ children }) => {
-
-    const [isLoading, setIsLoading] = useState(true)
-
     const navigate = useNavigate()
     const { setCaptain } = React.useContext(CaptainDataContext)
     const { captain } = useContext(CaptainDataContext)
@@ -39,7 +35,6 @@ const CaptainProtectedWrapper = ({ children }) => {
 
             if (response.status === 200) {
                 setCaptain(response.data)
-                setIsLoading(false)
             }
 
         })
@@ -53,16 +48,6 @@ const CaptainProtectedWrapper = ({ children }) => {
         })
 
     }, [navigate, setCaptain])
-
-    if (isLoading) {
-        return (
-            <div className='h-screen flex items-center justify-center'>
-                <p className='text-gray-600'>
-                    Loading...
-                </p>
-            </div>
-        )
-    }
 
     return (
         <>

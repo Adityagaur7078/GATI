@@ -3,10 +3,12 @@ import gatilogoblack from "../assets/gatilogoblack.png";
 import { Link, useNavigate } from 'react-router-dom';
 import { UserDataContext } from '../context/UserContext';
 import axios from 'axios';
+import { getAuthErrorMessage } from '../utils/authError';
 
 const UserLogin = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [errorMessage, setErrorMessage] = useState('')
 
     const navigate = useNavigate()
 
@@ -14,24 +16,30 @@ const UserLogin = () => {
 
     const submitHandler = async (e) => {
         e.preventDefault();
+        setErrorMessage('')
 
         const userData = {
             email: email,
             password: password
         };
 
-        const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/login`, userData)
+        try {
+            const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/login`, userData)
 
-        if (response.status === 200) {
-            const data = response.data
-            
-            setUser(data.user)
-            localStorage.setItem('token', data.token)
-            navigate('/home')
+            if (response.status === 200) {
+                const data = response.data
+
+                setUser(data.user)
+                localStorage.setItem('token', data.token)
+                window.dispatchEvent(new Event('auth-token-changed'))
+                navigate('/home')
+            }
+
+            setEmail('');
+            setPassword('');
+        } catch (error) {
+            setErrorMessage(getAuthErrorMessage(error, 'Unable to log in. Please try again.'))
         }
-
-        setEmail('');
-        setPassword('');
     }
 
     return (
@@ -78,7 +86,14 @@ const UserLogin = () => {
                             setPassword(e.target.value)
                         }}
                         placeholder='Password'
+                        minLength={8}
                     />
+
+                    {errorMessage && (
+                        <p className='text-red-600 text-sm mb-4' role='alert'>
+                            {errorMessage}
+                        </p>
+                    )}
 
                     <button
                         type="submit"

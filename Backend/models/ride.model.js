@@ -19,6 +19,11 @@ const rideSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    vehicleType: {
+        type: String,
+        enum: [ 'car', 'moto', 'auto' ],
+        required: true
+    },
     pickupLocation: {
         lat: Number,
         lng: Number

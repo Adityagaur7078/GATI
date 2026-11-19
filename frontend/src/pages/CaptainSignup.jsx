@@ -3,6 +3,7 @@ import gatilogoblackcaptain from "../assets/gatilogoblackcaptain.png";
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { CaptainDataContext } from "../context/CaptainContext";
+import { getAuthErrorMessage } from '../utils/authError';
 
 const CaptainSignup = () => {
   const [firstName, setFirstName] = useState('')
@@ -13,6 +14,7 @@ const CaptainSignup = () => {
   const [vehiclePlate, setVehiclePlate] = useState('')
   const [vehicleCapacity, setVehicleCapacity] = useState('')
   const [vehicleType, setVehicleType] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const navigate = useNavigate()
 
@@ -20,6 +22,7 @@ const CaptainSignup = () => {
 
   const submitHandler = async (e) => {
     e.preventDefault();
+    setErrorMessage('')
 
     const newCaptain = {
       fullName: {
@@ -47,6 +50,7 @@ const CaptainSignup = () => {
 
         setCaptain(data.captain)
         localStorage.setItem('captainToken', data.token)
+        window.dispatchEvent(new Event('auth-token-changed'))
         navigate('/captain-home')
       }
 
@@ -60,10 +64,7 @@ const CaptainSignup = () => {
       setVehicleType('')
 
     } catch (error) {
-      console.error(
-        'Captain signup failed:',
-        error.response?.data || error.message
-      );
+      setErrorMessage(getAuthErrorMessage(error, 'Unable to create your account. Please try again.'))
     }
   }
 
@@ -108,6 +109,7 @@ const CaptainSignup = () => {
               className='bg-white rounded-xl px-4 py-3.5 border border-gray-200 w-full text-base outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111] transition placeholder:text-gray-400'
               type="text"
               required
+              minLength={3}
               placeholder='First name'
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
@@ -117,6 +119,7 @@ const CaptainSignup = () => {
               className='bg-white rounded-xl px-4 py-3.5 border border-gray-200 w-full text-base outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111] transition placeholder:text-gray-400'
               type="text"
               required
+              minLength={3}
               placeholder='Last name'
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
@@ -146,9 +149,16 @@ const CaptainSignup = () => {
             type="password"
             required
             placeholder='Password'
+            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          {errorMessage && (
+            <p className='text-red-600 text-sm mb-4' role='alert'>
+              {errorMessage}
+            </p>
+          )}
 
         </div>
 

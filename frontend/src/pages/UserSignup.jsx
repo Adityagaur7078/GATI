@@ -3,12 +3,14 @@ import gatilogoblack from "../assets/gatilogoblack.png";
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { UserDataContext } from "../context/UserContext";
+import { getAuthErrorMessage } from '../utils/authError';
 
 const UserSignup = () => {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
 
   const navigate = useNavigate()
 
@@ -16,6 +18,7 @@ const UserSignup = () => {
 
   const submitHandler = async (e) => {
     e.preventDefault();
+    setErrorMessage('')
 
     const newUser = {
       fullName: {
@@ -26,20 +29,25 @@ const UserSignup = () => {
       password: password
     };
 
-    const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/register`, newUser);
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/users/register`, newUser);
 
-    if (response.status === 201) {
-      const data = response.data
+      if (response.status === 201) {
+        const data = response.data
 
-      setUser(data.user)
-      localStorage.setItem('token', data.token)
-      navigate('/home')
+        setUser(data.user)
+        localStorage.setItem('token', data.token)
+        window.dispatchEvent(new Event('auth-token-changed'))
+        navigate('/home')
+      }
+
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPassword('');
+    } catch (error) {
+      setErrorMessage(getAuthErrorMessage(error, 'Unable to create your account. Please try again.'))
     }
-
-    setFirstName('');
-    setLastName('');
-    setEmail('');
-    setPassword('');
   }
 
   return (
@@ -65,6 +73,7 @@ const UserSignup = () => {
               className='bg-[#eeeeee] rounded px-4 py-2 border w-1/2 text-lg placeholder:text-base'
               type="text"
               required
+              minLength={3}
               placeholder='First name'
               value={firstName}
               onChange={(e) => {
@@ -76,6 +85,7 @@ const UserSignup = () => {
               className='bg-[#eeeeee] rounded px-4 py-2 border w-1/2 text-lg placeholder:text-base'
               type="text"
               required
+              minLength={3}
               placeholder='Last name'
               value={lastName}
               onChange={(e) => {
@@ -109,11 +119,18 @@ const UserSignup = () => {
             type="password"
             required
             placeholder='Password'
+            minLength={8}
             value={password}
             onChange={(e) => {
               setPassword(e.target.value)
             }}
           />
+
+          {errorMessage && (
+            <p className='text-red-600 text-sm mb-4' role='alert'>
+              {errorMessage}
+            </p>
+          )}
 
           <button
             type="submit"

@@ -228,11 +228,16 @@ module.exports.getSuggestions = async (input) => {
     }
 };
 
-module.exports.getCaptainsInTheRadius = async (ltd, lng, radius) => {
+module.exports.getCaptainsInTheRadius = async (ltd, lng, radius, vehicleType) => {
+    const normalizedVehicleType = vehicleType === 'moto'
+        ? 'motorcycle'
+        : vehicleType;
+
     const captains = await captainModel.find({
         socketId: { $ne: null },
         'location.lat': { $exists: true },
         'location.lng': { $exists: true },
+        ...(normalizedVehicleType ? { 'vehicle.vehicleType': normalizedVehicleType } : {}),
     });
 
     const earthRadiusKm = 6371;

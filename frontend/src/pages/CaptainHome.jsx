@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 import gatilogoblackcaptain from "../assets/gatilogoblackcaptain.png";
-import gatimap from "../assets/gatimap.gif";
 import CaptainDetails from "../components/CaptainDetails";
 import RidePopUp from "../components/RidePopUp";
 import ConfirmRidePopUp from "../components/ConfirmRidePopUp";
@@ -27,16 +26,18 @@ const CaptainHome = () => {
   const confirmRidePopUpRef = useRef(null);
 
   useEffect(() => {
-    if (!captain?._id || !socketId || !navigator.geolocation) {
-      return;
+    if (!navigator.geolocation) {
+      return undefined;
     }
 
     const publishLocation = ({ coords }) => {
       const location = { lat: coords.latitude, lng: coords.longitude };
-      sendMessage("update-location-captain", {
-        userId: captain._id,
-        location,
-      });
+      if (captain?._id && socketId) {
+        sendMessage("update-location-captain", {
+          userId: captain._id,
+          location,
+        });
+      }
       setCaptainLocation(location);
     };
 
@@ -171,12 +172,17 @@ const CaptainHome = () => {
                 destinationLocation={ride.destinationLocation}
                 captainLocation={captainLocation}
                 userLocation={userLocation}
+                captainName={`${captain?.fullName?.firstName || ""} ${captain?.fullName?.lastName || ""}`.trim()}
+                userName={`${ride?.user?.fullName?.firstName || ""} ${ride?.user?.fullName?.lastName || ""}`.trim()}
                 routeTarget={userLocation || ride.pickupLocation}
                 followLocation={isDriving}
                 onToggleDriving={toggleDriving}
               />
             ) : (
-              <img src={gatimap} alt="Map" className="h-full w-full object-cover" />
+              <RideMap
+                captainLocation={captainLocation}
+                captainName={`${captain?.fullName?.firstName || ""} ${captain?.fullName?.lastName || ""}`.trim()}
+              />
             )}
 
             <div className="absolute left-0 right-0 top-0 z-1100 flex h-14 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm">

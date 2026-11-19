@@ -1,6 +1,19 @@
 import React from 'react'
 
-const LocationSearchPanel = ({ suggestions, onSelectSuggestion }) => {
+const LocationSearchPanel = ({ suggestions, isLoading, onSelectSuggestion }) => {
+  if (isLoading) {
+    return (
+      <div className='space-y-2 py-2' role='status' aria-label='Loading location suggestions'>
+        {[1, 2, 3].map((item) => (
+          <div key={item} className='flex animate-pulse items-center gap-4 rounded-xl border-2 border-gray-50 p-3'>
+            <div className='h-8 w-12 rounded-full bg-gray-200' />
+            <div className='h-4 flex-1 rounded bg-gray-200' />
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div>
       {

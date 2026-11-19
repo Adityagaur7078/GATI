@@ -5,36 +5,50 @@ const { validationResult } = require('express-validator');
 
 
 module.exports.registerCaptain = async (req, res, next) => {
+    try {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
 
-    const errors = validationResult(req);
-    if(!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        const { fullName, email, password, vehicle } = req.body;
+
+        const isCaptainAlreadyExist = await captainModel.findOne({ email });
+
+        if(isCaptainAlreadyExist) {
+            return res.status(400).json({ message: 'Captain already exist' });
+        }
+
+        const hashedPassword = await captainModel.hashPassword(password);
+
+        const captain = await captainService.createCaptain({
+            firstName: fullName.firstName,
+            lastName: fullName.lastName,
+            email,
+            password: hashedPassword,
+            color: vehicle.color,
+            plate: vehicle.plate,
+            capacity: vehicle.capacity,
+            vehicleType: vehicle.vehicleType
+        });
+
+        const token = captain.generateAuthToken();
+
+        return res.status(201).json({ token, captain });
+    } catch (error) {
+        console.error('Captain registration failed:', error);
+
+        if (error.code === 11000) {
+            return res.status(400).json({ message: 'Captain already exist' });
+        }
+
+        if (error.name === 'ValidationError') {
+            const message = Object.values(error.errors)[0]?.message;
+            return res.status(400).json({ message: message || 'Invalid captain details' });
+        }
+
+        return res.status(500).json({ message: 'Unable to create captain account' });
     }
-
-    const { fullName, email, password, vehicle } = req.body;
-
-    const isCaptainAlreadyExist = await captainModel.findOne({ email });
-
-    if(isCaptainAlreadyExist) {
-        return res.status(400).json({ message: 'Captain already exist' });
-    }
-
-    const hashedPassword = await captainModel.hashPassword(password);
-
-    const captain = await captainService.createCaptain({
-        firstName: fullName.firstName,
-        lastName: fullName.lastName,
-        email,
-        password: hashedPassword,
-        color: vehicle.color,
-        plate: vehicle.plate,
-        capacity: vehicle.capacity,
-        vehicleType: vehicle.vehicleType
-    });
-
-    const token = captain.generateAuthToken();
-
-    res.status(201).json({ token, captain });
 }
 
 module.exports.loginCaptain = async (req, res, next) => {

@@ -1,13 +1,9 @@
 import axios from 'axios'
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SocketDataContext } from '../context/SocketContext'
 import { UserDataContext } from '../context/UserContext'
-
 const UserProtectWrapper = ({ children }) => {
-
-    const [isLoading, setIsLoading] = useState(true)
-
     const navigate = useNavigate()
     const { user, setUser } = useContext(UserDataContext)
     const { socketId, sendMessage } = useContext(SocketDataContext)
@@ -41,7 +37,6 @@ const UserProtectWrapper = ({ children }) => {
 
             if (response.status === 200) {
                 setUser(response.data)
-                setIsLoading(false)
             }
 
         })
@@ -55,18 +50,6 @@ const UserProtectWrapper = ({ children }) => {
         })
 
     }, [navigate])
-
-
-    if (isLoading) {
-        return (
-            <div className='h-screen flex items-center justify-center'>
-                <p className='text-gray-600'>
-                    Loading...
-                </p>
-            </div>
-        )
-    }
-
 
     return (
         <>

@@ -1,7 +1,23 @@
 import React from "react";
-import gaticarimage from "../assets/gaticarimage.png"
+import gaticarimage from "../assets/gaticarimage.png";
+import gatibike from "../assets/gatibike.png";
+import gatiautoimage from "../assets/GatiAutoImage.png";
 
-const WaitingForDriver = ({ setWaitingForDriverPanel }) => {
+const WaitingForDriver = ({ setWaitingForDriverPanel, ride }) => {
+  const captain = ride?.captain;
+  const captainName = captain?.fullName
+    ? `${captain.fullName.firstName || ""} ${captain.fullName.lastName || ""}`.trim()
+    : "Your driver";
+  const vehicleType = ride?.vehicleType || captain?.vehicle?.vehicleType;
+  const vehicleImage =
+    vehicleType === "moto" || vehicleType === "motorcycle" ? gatibike :
+    vehicleType === "auto" ? gatiautoimage :
+    gaticarimage;
+  const vehicleName = captain?.vehicle
+    ? `${captain.vehicle.color ? `${captain.vehicle.color} ` : ""}${vehicleType === "motorcycle" || vehicleType === "moto" ? "Motorcycle" : vehicleType === "auto" ? "Auto" : "Car"}`
+    : "Gati vehicle";
+  const vehiclePlate = captain?.vehicle?.plate || "Plate unavailable";
+
   return (
     <div className="mx-auto w-full max-w-md rounded-t-4xl bg-white px-5 pb-6 pt-3 shadow-[0_-12px_40px_rgba(15,23,42,0.18)]">
       <button
@@ -29,7 +45,8 @@ const WaitingForDriver = ({ setWaitingForDriverPanel }) => {
       <div className="mb-5 grid grid-cols-[72px_1fr_72px] items-center gap-3 rounded-2xl border border-emerald-200 bg-linear-to-r from-emerald-50 to-white p-4 shadow-sm">
         <div className="flex h-21 w-21 items-center justify-center overflow-hidden">
           <img
-            src={gaticarimage}
+            src={vehicleImage}
+            alt={vehicleName}
             className="h-full w-full object-contain"
           />
         </div>
@@ -38,12 +55,12 @@ const WaitingForDriver = ({ setWaitingForDriverPanel }) => {
           <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
             Your driver
           </p>
-          <p className="text-lg font-extrabold text-slate-950">Amishah</p>
+          <p className="text-lg font-extrabold text-slate-950">{captainName}</p>
           <p className="text-sm font-semibold text-slate-700">
-            Maruti Suzuki Alto
+            {vehicleName}
           </p>
           <p className="mt-1 inline-block rounded-md bg-slate-950 px-2 py-1 text-xs font-extrabold tracking-widest text-white">
-            MP04 AB 1234
+            {vehiclePlate}
           </p>
         </div>
 
@@ -64,7 +81,7 @@ const WaitingForDriver = ({ setWaitingForDriverPanel }) => {
                 Pickup
               </p>
               <p className="text-sm font-bold text-slate-900">
-                562/11-A, Kankariya Talab
+                {ride?.pickup || "Pickup location"}
               </p>
             </div>
           </div>
@@ -76,7 +93,7 @@ const WaitingForDriver = ({ setWaitingForDriverPanel }) => {
                 Destination
               </p>
               <p className="text-sm font-bold text-slate-900">
-                Kankariya Talab, Bhopal
+                {ride?.destination || "Destination"}
               </p>
             </div>
           </div>
@@ -94,7 +111,7 @@ const WaitingForDriver = ({ setWaitingForDriverPanel }) => {
           </div>
         </div>
 
-        <p className="text-xl font-bold text-slate-950">₹193.20</p>
+        <p className="text-xl font-bold text-slate-950">{ride?.fare ? `₹${Number(ride.fare).toFixed(2)}` : "-"}</p>
       </div>
 
     </div>
