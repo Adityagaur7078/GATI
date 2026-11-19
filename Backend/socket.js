@@ -7,8 +7,11 @@ const rideModel = require("./models/ride.model");
 
 let io;
 
-const allowedOrigin =
-    process.env.FRONTEND_URL || "http://localhost:5173";
+const allowedOrigins = [
+    process.env.FRONTEND_URL,
+    "http://localhost:5173",
+    "https://gati-tawny-tau.vercel.app",
+].filter(Boolean);
 
 const ACTIVE_RIDE_STATUSES = ["accepted", "ongoing"];
 const USER_RIDE_STATUSES = ["pending", "accepted", "ongoing"];
@@ -26,6 +29,14 @@ function isValidLocation(location) {
         location.lng >= -180 &&
         location.lng <= 180
     );
+}
+
+function normalizeVehicleType(vehicleType) {
+    return vehicleType === "moto" ? "motorcycle" : vehicleType;
+}
+
+function getVehicleRoom(vehicleType) {
+    return `captains:${normalizeVehicleType(vehicleType)}`;
 }
 
 /**
@@ -113,7 +124,7 @@ function initializeSocket(server) {
 
     io = new Server(server, {
         cors: {
-            origin: allowedOrigin,
+            origin: allowedOrigins,
             methods: ["GET", "POST"],
             credentials: true,
         },
@@ -135,6 +146,14 @@ function initializeSocket(server) {
             await model.findByIdAndUpdate(userId, {
                 $set: { socketId: socket.id },
             });
+
+            if (userType === "captain") {
+                const captain = await captainModel.findById(userId).select("vehicle.vehicleType");
+                const vehicleType = captain?.vehicle?.vehicleType;
+                if (vehicleType) {
+                    socket.join(getVehicleRoom(vehicleType));
+                }
+            }
         } catch (error) {
             console.error("Unable to register socket:", error.message);
             socket.disconnect(true);
@@ -168,16 +187,8 @@ function initializeSocket(server) {
             }
 
             try {
-                const ride = await rideModel.findOne({
-                    captain: userId,
-                    status: { $in: ACTIVE_RIDE_STATUSES },
-                }).populate("user", "socketId");
-
-                if (!ride) {
-                    return;
-                }
-
-                // Update the authenticated captain's location.
+                // Persist captain position even when no ride is active, so new
+                // ride searches can find nearby captains by vehicle type.
                 await captainModel.findByIdAndUpdate(userId, {
                     $set: {
                         location: {
@@ -186,6 +197,15 @@ function initializeSocket(server) {
                         },
                     },
                 });
+
+                const ride = await rideModel.findOne({
+                    captain: userId,
+                    status: { $in: ACTIVE_RIDE_STATUSES },
+                }).populate("user", "socketId");
+
+                if (!ride) {
+                    return;
+                }
 
                 const recipientSocketId = ride.user?.socketId;
 
@@ -299,7 +319,24 @@ function sendMessageToSocketId(socketId, messageObject) {
     );
 }
 
+function sendRideToVehicleType(vehicleType, messageObject) {
+    if (!io) {
+        throw new Error("Socket has not been initialized");
+    }
+
+    if (!vehicleType || !messageObject ||
+        typeof messageObject.event !== "string") {
+        throw new Error("Invalid ride broadcast");
+    }
+
+    io.to(getVehicleRoom(vehicleType)).emit(
+        messageObject.event,
+        messageObject.data
+    );
+}
+
 module.exports = {
     initializeSocket,
     sendMessageToSocketId,
+    sendRideToVehicleType,
 };
