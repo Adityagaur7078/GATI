@@ -3,6 +3,7 @@ const { validationResult } = require('express-validator');
 const mapService = require("../services/map.service");
 const { sendMessageToSocketId, sendRideToVehicleType } = require("../socket");
 const rideModel = require("../models/ride.model");
+const captainModel = require("../models/captain.model");
 
 module.exports.createRide = async (req, res) => {
     const errors = validationResult(req);
@@ -33,6 +34,22 @@ module.exports.createRide = async (req, res) => {
             event: 'new-ride',
             data: captainRide
         });
+
+        const captainVehicleType = vehicleType === 'moto'
+            ? 'motorcycle'
+            : vehicleType;
+
+        const matchingCaptains = await captainModel.find({
+            socketId: { $ne: null },
+            'vehicle.vehicleType': captainVehicleType,
+        }).select('socketId');
+
+        for (const captain of matchingCaptains) {
+            sendMessageToSocketId(captain.socketId, {
+                event: 'new-ride',
+                data: captainRide,
+            });
+        }
 
         return res.status(201).json(userRide);
     } catch (err) {
