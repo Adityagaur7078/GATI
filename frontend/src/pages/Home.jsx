@@ -128,7 +128,9 @@ const Home = () => {
           if (error.response?.status === 401) {
             localStorage.removeItem("token");
             navigate("/login", { replace: true });
+            return;
           }
+
         }
       } finally {
         setSuggestionsLoading(false);
@@ -277,15 +279,15 @@ const Home = () => {
   }, [waitingForDriverPanel]);
 
   return (
-    <div className="relative h-[100dvh] overflow-hidden bg-slate-100">
+    <div className="relative h-dvh overflow-hidden bg-slate-100">
 
       <img
-        className="absolute left-5 top-5 z-[1200] w-16"
+        className="absolute left-5 top-5 z-1200 w-16"
         src={gatilogoblack}
         alt="Gati"
       />
 
-      <div className={`absolute inset-x-0 top-0 w-full transition-[height] duration-500 ease-in-out ${panelOpen ? "h-[0dvh]" : "h-[70dvh]"}`}>
+      <div className={`absolute inset-x-0 top-0 w-full transition-[height] duration-500 ease-in-out ${panelOpen ? "h-0" : "h-[70dvh]"}`}>
         <RideMap
           pickupLocation={pickupLocation}
           destinationLocation={destinationLocation}
@@ -295,11 +297,11 @@ const Home = () => {
       </div>
 
       <div
-        className={`absolute inset-x-0 z-[1100] flex flex-col transition-[height,top,bottom] duration-500 ease-in-out ${panelOpen ? "inset-y-0 h-[100dvh] justify-start" : "bottom-0 h-[30dvh] min-h-[220px] max-h-[320px] justify-end"}`}
+        className={`absolute inset-x-0 z-1100 flex flex-col transition-[height,top,bottom] duration-500 ease-in-out ${panelOpen ? "inset-y-0 h-dvh justify-start" : "bottom-0 h-[30dvh] min-h-55 max-h-80 justify-end"}`}
       >
 
         <div
-          className={`relative shrink-0 bg-white px-6 ${panelOpen ? "pt-20 pb-4" : "pt-6 pb-[70px]"
+          className={`relative shrink-0 bg-white px-6 ${panelOpen ? "pt-20 pb-4" : "pt-6 pb-17.5"
             }`}
         >
 
